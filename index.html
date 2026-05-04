@@ -1,112 +1,144 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IQ GOD FINAL 💀</title>
+<title>IQ Adventure 😈</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-  text-align:center;
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  text-align: center;
 }
-button{
-  padding:12px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  background:#22c55e;
-  color:white;
+
+#game {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: auto;
+  background: #222;
+  border: 2px solid white;
 }
-input{
-  padding:10px;
+
+.player {
+  width: 30px;
+  height: 30px;
+  background: lime;
+  position: absolute;
+}
+
+.box {
+  width: 30px;
+  height: 30px;
+  background: red;
+  position: absolute;
+}
+
+button {
+  padding: 10px;
+  margin: 5px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>💀 IQ GOD FINAL</h1>
+<h2>💀 IQ Adventure</h2>
+<p>XP: <span id="xp">0</span></p>
 
-<h2 id="q"></h2>
-<input id="a">
-<br><br>
-<button onclick="check()">Jawab</button>
-<button onclick="next()">Next</button>
+<div id="game">
+  <div id="player" class="player"></div>
+  <div id="box" class="box"></div>
+</div>
 
-<h3 id="res"></h3>
-<h3>XP: <span id="xp">0</span></h3>
+<br>
+
+<button onclick="move(0,-10)">⬆️</button><br>
+<button onclick="move(-10,0)">⬅️</button>
+<button onclick="move(10,0)">➡️</button><br>
+<button onclick="move(0,10)">⬇️</button>
 
 <script>
 
-// ===== GENERATOR 1 JUTA SOAL =====
-function generateQuestion(){
+let player = document.getElementById("player");
+let box = document.getElementById("box");
 
-  let type = Math.floor(Math.random()*5);
+let x = 0, y = 0;
+let xp = 0;
 
-  // 1. MATEMATIKA
-  if(type===0){
-    let a = Math.floor(Math.random()*50);
-    let b = Math.floor(Math.random()*50);
-    return {q:`${a} + ${b} = ?`, a:(a+b).toString()};
-  }
+// posisi awal
+player.style.left = x + "px";
+player.style.top = y + "px";
 
-  // 2. LOGIKA
-  if(type===1){
-    let arr = ["ular","ikan","burung"];
-    return {q:"Hewan tanpa kaki?", a:"ular"};
-  }
+spawnBox();
 
-  // 3. BAHASA
-  if(type===2){
-    return {q:"Lawan kata 'panas'?", a:"dingin"};
-  }
+// GERAK
+function move(dx, dy){
+  x += dx;
+  y += dy;
 
-  // 4. PSIKOLOGI (pilihan)
-  if(type===3){
-    return {q:"Kamu pilih A atau B? (jawab A/B)", a:"a"};
-  }
+  // batas map
+  if(x < 0) x = 0;
+  if(y < 0) y = 0;
+  if(x > 270) x = 270;
+  if(y > 270) y = 270;
 
-  // 5. POLA
-  if(type===4){
-    return {q:"2,4,6,8,...?", a:"10"};
-  }
+  player.style.left = x + "px";
+  player.style.top = y + "px";
 
+  checkCollision();
 }
 
-let current;
-let xp = localStorage.getItem("xp") || 0;
+// SPAWN BOX
+function spawnBox(){
+  let bx = Math.floor(Math.random()*270);
+  let by = Math.floor(Math.random()*270);
 
-document.getElementById("xp").innerText = xp;
-
-// NEXT
-function next(){
-  current = generateQuestion();
-  document.getElementById("q").innerText = current.q;
-  document.getElementById("a").value = "";
-  document.getElementById("res").innerText = "";
+  box.style.left = bx + "px";
+  box.style.top = by + "px";
 }
 
-// CHECK
-function check(){
-  let user = document.getElementById("a").value.toLowerCase();
+// DETEKSI TABRAKAN
+function checkCollision(){
+  let px = x;
+  let py = y;
 
-  if(user == current.a){
-    document.getElementById("res").innerText = "🔥 BENAR";
-    xp = parseInt(xp) + 10;
+  let bx = parseInt(box.style.left);
+  let by = parseInt(box.style.top);
+
+  if(Math.abs(px - bx) < 30 && Math.abs(py - by) < 30){
+    askQuestion();
+    spawnBox();
+  }
+}
+
+// SOAL RANDOM
+function getQuestion(){
+  let list = [
+    {q:"Hewan tanpa kaki?", a:"ular"},
+    {q:"Apa lawan dari sedih?", a:"senang"},
+    {q:"Jika kamu sendirian, kamu merasa? (baik/buruk)", a:"baik"},
+    {q:"2+5=?", a:"7"},
+    {q:"Air jadi es jika?", a:"dingin"}
+  ];
+  return list[Math.floor(Math.random()*list.length)];
+}
+
+// TANYA
+function askQuestion(){
+  let q = getQuestion();
+  let jawab = prompt(q.q);
+
+  if(jawab && jawab.toLowerCase() == q.a){
+    alert("🔥 BENAR");
+    xp += 10;
   }else{
-    document.getElementById("res").innerText = "❌ SALAH";
+    alert("❌ SALAH");
   }
 
   document.getElementById("xp").innerText = xp;
-  localStorage.setItem("xp", xp);
 }
-
-// START
-next();
 
 </script>
 
