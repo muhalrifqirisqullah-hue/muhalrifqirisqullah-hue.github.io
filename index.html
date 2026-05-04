@@ -1,107 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>BrainRank World 🌍</title>
-</head>
-
-<body style="font-family:sans-serif;text-align:center;background:#111;color:white">
-
-<!-- LOGIN -->
-<div id="login">
-  <h1>🧠 BrainRank World</h1>
-  <input id="nama" placeholder="Masukkan nama"><br><br>
-
-  <h3>Pilih Level</h3>
-  <button onclick="start('easy')">Easy 😄</button>
-  <button onclick="start('medium')">Medium 😎</button>
-  <button onclick="start('hard')">Hard 😈</button>
-  <button onclick="start('extreme')">Extreme 🔥</button>
-</div>
-
-<!-- GAME -->
-<div id="game" style="display:none">
-  <h2 id="timer"></h2>
-  <h3 id="soal"></h3>
-  <div id="jawaban"></div>
-</div>
-
-<!-- HASIL -->
-<div id="hasil" style="display:none">
-  <h2 id="skor"></h2>
-  <button onclick="lihatRanking()">Lihat Ranking</button>
-</div>
-
-<!-- RANKING -->
-<div id="ranking" style="display:none">
-  <h2>🏆 Ranking</h2>
-  <ol id="list"></ol>
-</div>
-
 <script>
-// ================= SOAL CAMPURAN =================
 let semuaSoal = [
-  {q:"2+2=?", a:["3","4","5"], b:1},
-  {q:"10-3=?", a:["5","7","8"], b:1},
-  {q:"6x2=?", a:["12","10","8"], b:0},
-
   {q:"Hewan tanpa kaki?", a:["Ular","Kucing","Ayam"], b:0},
-  {q:"Hewan terbesar?", a:["Gajah","Paus Biru","Singa"], b:1},
-
-  {q:"Apa yang naik terus?", a:["Umur","Air","Bola"], b:0},
-  {q:"Apa yang tidak bisa dilihat?", a:["Angin","Batu","Kayu"], b:0},
-
-  {q:"Ayam bertelur di atap?", a:["Kiri","Kanan","Tidak bertelur"], b:2},
-  {q:"Apa yang selalu di depan?", a:["Masa depan","Masa lalu","Air"], b:0},
-
   {q:"Ibukota Indonesia?", a:["Jakarta","Bandung","Surabaya"], b:0},
-  {q:"Air mendidih?", a:["100°C","50°C","200°C"], b:0},
-  {q:"Planet kita?", a:["Mars","Bumi","Venus"], b:1}
+  {q:"Apa yang naik terus?", a:["Umur","Air","Bola"], b:0},
+  {q:"Ayam bertelur di atap?", a:["Kiri","Kanan","Tidak"], b:2},
+  {q:"Planet kita?", a:["Mars","Bumi","Venus"], b:1},
+  {q:"2+2=?", a:["3","4","5"], b:1},
+  {q:"Air mendidih?", a:["100°C","50°C","200°C"], b:0}
 ];
 
-// ================= VAR =================
 let soal = [];
 let index = 0;
 let score = 0;
 let waktu = 10;
 let timer;
+let nyawa = 3;
+let streak = 0;
 
-// ================= START =================
+// START
 function start(level){
   let nama = document.getElementById("nama").value;
-  if(!nama) return alert("Isi nama dulu!");
+  if(!nama) return alert("Isi nama!");
 
   document.getElementById("login").style.display="none";
   document.getElementById("game").style.display="block";
 
-  let jumlahSoal = 5;
+  if(level=="easy"){waktu=12;}
+  if(level=="medium"){waktu=10;}
+  if(level=="hard"){waktu=7;}
+  if(level=="extreme"){waktu=5;}
 
-  if(level=="easy"){waktu=15; jumlahSoal=5;}
-  if(level=="medium"){waktu=10; jumlahSoal=7;}
-  if(level=="hard"){waktu=7; jumlahSoal=10;}
-  if(level=="extreme"){waktu=5; jumlahSoal=12;}
-
-  soal = shuffle(semuaSoal).slice(0,jumlahSoal);
-
+  soal = shuffle(semuaSoal);
   index = 0;
   score = 0;
+  nyawa = 3;
+  streak = 0;
 
   tampilSoal();
 }
 
-// ================= ACAK =================
+// ACAK
 function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    let j = Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
-  }
-  return array;
+  return array.sort(()=>Math.random()-0.5);
 }
 
-// ================= TAMPIL =================
+// TAMPIL
 function tampilSoal(){
-  if(index >= soal.length){
+  if(nyawa <= 0){
     selesai();
     return;
+  }
+
+  if(index >= soal.length){
+    soal = shuffle(semuaSoal); // infinite
+    index = 0;
   }
 
   let s = soal[index];
@@ -114,51 +66,71 @@ function tampilSoal(){
 
   document.getElementById("jawaban").innerHTML = html;
 
+  document.getElementById("timer").innerText =
+    "❤️ "+nyawa+" | 🔥 "+streak+" | 🏆 "+score;
+
   startTimer();
 }
 
-// ================= JAWAB =================
+// JAWAB
 function jawab(i){
   if(i === soal[index].b){
-    score += 10;
+    streak++;
+
+    let bonus = 10;
+
+    if(streak >= 3) bonus = 20;
+    if(streak >= 5) bonus = 30;
+
+    score += bonus;
+
+    // makin lama makin cepat
+    if(waktu > 3) waktu -= 0.3;
+
+  }else{
+    nyawa--;
+    streak = 0;
   }
 
   index++;
   tampilSoal();
 }
 
-// ================= TIMER =================
+// TIMER
 function startTimer(){
-  let t = waktu;
-  document.getElementById("timer").innerText = "⏱️ "+t;
+  let t = Math.floor(waktu);
 
   clearInterval(timer);
 
   timer = setInterval(()=>{
     t--;
-    document.getElementById("timer").innerText = "⏱️ "+t;
+    document.getElementById("timer").innerText =
+      "❤️ "+nyawa+" | 🔥 "+streak+" | 🏆 "+score+" | ⏱️ "+t;
 
-    if(t<=0){
+    if(t <= 0){
       clearInterval(timer);
+      nyawa--;
+      streak = 0;
       index++;
       tampilSoal();
     }
   },1000);
 }
 
-// ================= SELESAI =================
+// SELESAI
 function selesai(){
   clearInterval(timer);
 
   document.getElementById("game").style.display="none";
   document.getElementById("hasil").style.display="block";
 
-  document.getElementById("skor").innerText = "Skor kamu: "+score;
+  document.getElementById("skor").innerText =
+    "GAME OVER 😈 Skor: "+score;
 
   simpanLocal();
 }
 
-// ================= SIMPAN LOCAL =================
+// SIMPAN
 function simpanLocal(){
   let nama = document.getElementById("nama").value;
 
@@ -170,7 +142,7 @@ function simpanLocal(){
   localStorage.setItem("rank", JSON.stringify(data));
 }
 
-// ================= RANKING =================
+// RANKING
 function lihatRanking(){
   document.getElementById("hasil").style.display="none";
   document.getElementById("ranking").style.display="block";
@@ -184,7 +156,4 @@ function lihatRanking(){
 
   document.getElementById("list").innerHTML = html;
 }
-</script>
-
-</body>
-</html>
+                          </script>
