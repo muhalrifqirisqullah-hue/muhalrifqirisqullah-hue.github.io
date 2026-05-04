@@ -1,106 +1,193 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>BrainRank World 🌍</title>
-  <style>
-    body{
-      font-family:sans-serif;
-      text-align:center;
-      background:#111;
-      color:white;
-    }
-    button{
-      padding:10px;
-      margin:5px;
-      border:none;
-      border-radius:10px;
-      background:limegreen;
-      color:white;
-    }
-  </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IQ Battle World 🌍</title>
+
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:white;
+  text-align:center;
+}
+
+h1{margin-top:20px;}
+
+.container{
+  padding:20px;
+}
+
+.card{
+  background:#ffffff11;
+  border-radius:15px;
+  padding:20px;
+  margin:10px;
+  backdrop-filter: blur(10px);
+  animation:fade 0.5s;
+}
+
+button{
+  width:80%;
+  padding:12px;
+  margin:8px;
+  border:none;
+  border-radius:10px;
+  background:limegreen;
+  color:white;
+  font-size:16px;
+}
+
+button:hover{opacity:0.8;}
+
+.hidden{display:none;}
+
+@keyframes fade{
+  from{opacity:0; transform:translateY(20px);}
+  to{opacity:1;}
+}
+
+.footer{
+  margin-top:30px;
+  font-size:12px;
+  opacity:0.7;
+}
+</style>
 </head>
 
 <body>
 
-<h1>🧠 BrainRank World</h1>
+<h1>🧠 IQ Battle World</h1>
 
-<div id="menu">
-  <input id="nama" placeholder="Nama kamu"><br><br>
-  <button onclick="start()">Mulai 🚀</button>
+<div id="menu" class="container">
+  <div class="card">
+    <input id="nama" placeholder="Nama kamu"><br><br>
+
+    <h3>Pilih Level</h3>
+    <button onclick="start('easy')">Easy 😊</button>
+    <button onclick="start('medium')">Medium 😐</button>
+    <button onclick="start('hard')">Hard 😈</button>
+    <button onclick="start('extreme')">Extreme 💀</button>
+
+    <br><br>
+    <button onclick="openSetting()">⚙️ Settings</button>
+  </div>
 </div>
 
-<div id="game" style="display:none">
-  <h2 id="timer"></h2>
-  <h3 id="soal"></h3>
-  <div id="jawaban"></div>
+<div id="game" class="container hidden">
+  <div class="card">
+    <h3 id="timer"></h3>
+    <h2 id="soal"></h2>
+    <div id="jawaban"></div>
+  </div>
 </div>
 
-<div id="hasil" style="display:none">
-  <h2 id="skor"></h2>
-  <button onclick="ulang()">Main Lagi</button>
+<div id="hasil" class="container hidden">
+  <div class="card">
+    <h2 id="skor"></h2>
+    <button onclick="ulang()">Main Lagi</button>
+  </div>
+</div>
+
+<div id="setting" class="container hidden">
+  <div class="card">
+    <h2>⚙️ Settings</h2>
+    <label>
+      Sound:
+      <input type="checkbox" id="sound" checked>
+    </label>
+    <br><br>
+    <button onclick="closeSetting()">Kembali</button>
+  </div>
+</div>
+
+<div class="footer">
+  Dibuat oleh Ulaa 🚀
 </div>
 
 <script>
-let semuaSoal = [
-  {q:"Hewan tanpa kaki?", a:["Ular","Kucing","Ayam"], b:0},
-  {q:"Ibukota Indonesia?", a:["Jakarta","Bandung","Surabaya"], b:0},
-  {q:"2+2=?", a:["3","4","5"], b:1},
-  {q:"Planet kita?", a:["Mars","Bumi","Venus"], b:1}
-];
+let soalDB = {
+easy:[
+{q:"Hewan tanpa kaki?",a:["Ular","Kucing","Ayam"],b:0},
+{q:"Air berwarna?",a:["Biru","Hijau","Bening"],b:2}
+],
+medium:[
+{q:"Ibukota Jepang?",a:["Tokyo","Seoul","Beijing"],b:0},
+{q:"5x6=?",a:["30","25","35"],b:0}
+],
+hard:[
+{q:"Jika 2,4,8,16,... berikutnya?",a:["18","32","24"],b:1},
+{q:"Benda untuk melihat jauh?",a:["Teleskop","Mikroskop","Kaca"],b:0}
+],
+extreme:[
+{q:"Jika semua A adalah B, dan B adalah C?",a:["A adalah C","C adalah A","Tidak pasti"],b:0},
+{q:"100/5+20=?",a:["40","30","50"],b:0}
+]
+};
 
-let soal, index, score, timer;
+let soal, index, score, timer, soundOn=true;
 
-function start(){
-  let nama = document.getElementById("nama").value;
-  if(!nama) return alert("Isi nama!");
+let audioBenar = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
+let audioSalah = new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3");
 
-  document.getElementById("menu").style.display="none";
-  document.getElementById("game").style.display="block";
+function start(level){
+  let nama=document.getElementById("nama").value;
+  if(!nama)return alert("Isi nama!");
 
-  soal = semuaSoal.sort(()=>Math.random()-0.5);
-  index = 0;
-  score = 0;
+  soundOn=document.getElementById("sound").checked;
+
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+
+  soal=[...soalDB[level]].sort(()=>Math.random()-0.5);
+  index=0;
+  score=0;
 
   tampil();
 }
 
 function tampil(){
-  if(index >= soal.length){
+  if(index>=soal.length){
     selesai();
     return;
   }
 
-  let s = soal[index];
-  document.getElementById("soal").innerText = s.q;
+  let s=soal[index];
+  document.getElementById("soal").innerText=s.q;
 
   let html="";
   s.a.forEach((j,i)=>{
-    html += `<button onclick="jawab(${i})">${j}</button><br>`;
+    html+=`<button onclick="jawab(${i})">${j}</button>`;
   });
 
-  document.getElementById("jawaban").innerHTML = html;
+  document.getElementById("jawaban").innerHTML=html;
 
   startTimer();
 }
 
 function jawab(i){
-  if(i === soal[index].b){
-    score += 10;
+  if(i===soal[index].b){
+    score+=10;
+    if(soundOn)audioBenar.play();
+  }else{
+    if(soundOn)audioSalah.play();
   }
+
   index++;
   tampil();
 }
 
 function startTimer(){
-  let t = 10;
-  document.getElementById("timer").innerText = "⏱️ "+t;
+  let t=10;
+  document.getElementById("timer").innerText="⏱️ "+t;
 
   clearInterval(timer);
-  timer = setInterval(()=>{
+  timer=setInterval(()=>{
     t--;
-    document.getElementById("timer").innerText = "⏱️ "+t;
+    document.getElementById("timer").innerText="⏱️ "+t;
 
-    if(t <= 0){
+    if(t<=0){
       clearInterval(timer);
       index++;
       tampil();
@@ -111,15 +198,24 @@ function startTimer(){
 function selesai(){
   clearInterval(timer);
 
-  document.getElementById("game").style.display="none";
-  document.getElementById("hasil").style.display="block";
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("hasil").classList.remove("hidden");
 
-  document.getElementById("skor").innerText =
-    "Skor kamu: "+score;
+  document.getElementById("skor").innerText="Skor kamu: "+score;
 }
 
 function ulang(){
   location.reload();
+}
+
+function openSetting(){
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("setting").classList.remove("hidden");
+}
+
+function closeSetting(){
+  document.getElementById("setting").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
 }
 </script>
 
