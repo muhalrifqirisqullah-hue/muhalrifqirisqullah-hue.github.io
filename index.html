@@ -2,142 +2,154 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>IQ Adventure 😈</title>
+<title>ZEP Quiz Clone 😈</title>
 
 <style>
 body {
   margin: 0;
-  background: #111;
+  font-family: Arial;
+  background: #0f172a;
   color: white;
-  text-align: center;
 }
 
 #game {
-  position: relative;
-  width: 300px;
-  height: 300px;
+  width: 400px;
+  height: 400px;
   margin: auto;
-  background: #222;
-  border: 2px solid white;
+  position: relative;
+  background: #1e293b;
+  border: 3px solid #38bdf8;
 }
 
 .player {
   width: 30px;
   height: 30px;
-  background: lime;
+  background: #22c55e;
   position: absolute;
+  border-radius: 5px;
 }
 
 .box {
   width: 30px;
   height: 30px;
-  background: red;
+  background: #ef4444;
   position: absolute;
+  border-radius: 5px;
+}
+
+#quizBox {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #020617;
+  padding: 20px;
+  display: none;
 }
 
 button {
   padding: 10px;
-  margin: 5px;
+  margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>💀 IQ Adventure</h2>
-<p>XP: <span id="xp">0</span></p>
+<h2 style="text-align:center;">🔥 ZEP QUIZ CLONE</h2>
 
 <div id="game">
   <div id="player" class="player"></div>
-  <div id="box" class="box"></div>
 </div>
 
-<br>
-
-<button onclick="move(0,-10)">⬆️</button><br>
-<button onclick="move(-10,0)">⬅️</button>
-<button onclick="move(10,0)">➡️</button><br>
-<button onclick="move(0,10)">⬇️</button>
+<div id="quizBox">
+  <h3 id="question"></h3>
+  <input id="answer">
+  <br>
+  <button onclick="submitAnswer()">Jawab</button>
+</div>
 
 <script>
 
+let game = document.getElementById("game");
 let player = document.getElementById("player");
-let box = document.getElementById("box");
 
-let x = 0, y = 0;
-let xp = 0;
+let x = 50, y = 50;
+player.style.left = x+"px";
+player.style.top = y+"px";
 
-// posisi awal
-player.style.left = x + "px";
-player.style.top = y + "px";
+// GERAK KEYBOARD
+document.addEventListener("keydown", e=>{
+  if(e.key=="ArrowUp") y-=10;
+  if(e.key=="ArrowDown") y+=10;
+  if(e.key=="ArrowLeft") x-=10;
+  if(e.key=="ArrowRight") x+=10;
 
-spawnBox();
+  x=Math.max(0,Math.min(370,x));
+  y=Math.max(0,Math.min(370,y));
 
-// GERAK
-function move(dx, dy){
-  x += dx;
-  y += dy;
+  player.style.left=x+"px";
+  player.style.top=y+"px";
 
-  // batas map
-  if(x < 0) x = 0;
-  if(y < 0) y = 0;
-  if(x > 270) x = 270;
-  if(y > 270) y = 270;
+  checkBox();
+});
 
-  player.style.left = x + "px";
-  player.style.top = y + "px";
-
-  checkCollision();
+// SPAWN BANYAK BOX
+let boxes=[];
+for(let i=0;i<5;i++){
+  let b=document.createElement("div");
+  b.className="box";
+  b.style.left=Math.random()*370+"px";
+  b.style.top=Math.random()*370+"px";
+  game.appendChild(b);
+  boxes.push(b);
 }
 
-// SPAWN BOX
-function spawnBox(){
-  let bx = Math.floor(Math.random()*270);
-  let by = Math.floor(Math.random()*270);
-
-  box.style.left = bx + "px";
-  box.style.top = by + "px";
-}
-
-// DETEKSI TABRAKAN
-function checkCollision(){
-  let px = x;
-  let py = y;
-
-  let bx = parseInt(box.style.left);
-  let by = parseInt(box.style.top);
-
-  if(Math.abs(px - bx) < 30 && Math.abs(py - by) < 30){
-    askQuestion();
-    spawnBox();
-  }
-}
-
-// SOAL RANDOM
-function getQuestion(){
-  let list = [
-    {q:"Hewan tanpa kaki?", a:"ular"},
-    {q:"Apa lawan dari sedih?", a:"senang"},
-    {q:"Jika kamu sendirian, kamu merasa? (baik/buruk)", a:"baik"},
-    {q:"2+5=?", a:"7"},
-    {q:"Air jadi es jika?", a:"dingin"}
+// SOAL
+function randomQ(){
+  const list=[
+    {q:"Hewan tanpa kaki?",a:"ular"},
+    {q:"2+3=?",a:"5"},
+    {q:"Lawan panas?",a:"dingin"},
+    {q:"Air jadi es jika?",a:"dingin"},
+    {q:"Ibukota Indonesia?",a:"jakarta"}
   ];
   return list[Math.floor(Math.random()*list.length)];
 }
 
-// TANYA
-function askQuestion(){
-  let q = getQuestion();
-  let jawab = prompt(q.q);
+let currentQ;
 
-  if(jawab && jawab.toLowerCase() == q.a){
+// CEK TABRAKAN
+function checkBox(){
+  boxes.forEach(b=>{
+    let bx=parseInt(b.style.left);
+    let by=parseInt(b.style.top);
+
+    if(Math.abs(x-bx)<30 && Math.abs(y-by)<30){
+      openQuiz();
+      b.remove();
+    }
+  });
+}
+
+// BUKA QUIZ
+function openQuiz(){
+  currentQ=randomQ();
+  document.getElementById("quizBox").style.display="block";
+  document.getElementById("question").innerText=currentQ.q;
+}
+
+// JAWAB
+function submitAnswer(){
+  let ans=document.getElementById("answer").value.toLowerCase();
+
+  if(ans==currentQ.a){
     alert("🔥 BENAR");
-    xp += 10;
   }else{
     alert("❌ SALAH");
   }
 
-  document.getElementById("xp").innerText = xp;
+  document.getElementById("quizBox").style.display="none";
+  document.getElementById("answer").value="";
 }
 
 </script>
