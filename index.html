@@ -1,20 +1,112 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Website Ulaa 🚀</title>
+  <title>Quiz Ulaa 🚀</title>
   <style>
     body {
+      font-family: Arial;
+      text-align: center;
       background: black;
       color: lime;
-      text-align: center;
-      font-family: Arial;
+    }
+    .box {
+      margin-top: 50px;
+    }
+    button {
+      padding: 10px;
+      margin: 10px;
+      background: lime;
+      border: none;
+      cursor: pointer;
+    }
+    input {
+      padding: 10px;
     }
   </style>
 </head>
+
 <body>
-  <h1>Halo Dunia 🌍</h1>
-  <p>Website pertama saya online!</p>
-  <button onclick="alert('Mantap 😎')">Klik Aku</button>
+
+<div class="box" id="login">
+  <h1>Masukkan Nama</h1>
+  <input id="nama" placeholder="Nama kamu">
+  <br>
+  <button onclick="start()">Mulai</button>
+</div>
+
+<div class="box" id="quiz" style="display:none;">
+  <h2 id="soal"></h2>
+  <button onclick="jawab(true)">Benar</button>
+  <button onclick="jawab(false)">Salah</button>
+</div>
+
+<div class="box" id="hasil" style="display:none;">
+  <h2>Skor kamu: <span id="skor"></span></h2>
+  <h3>Papan Peringkat 🏆</h3>
+  <ul id="leaderboard"></ul>
+</div>
+
+<script>
+let nama = "";
+let skor = 0;
+let index = 0;
+
+let soal = [
+  {t:"2+2=4", j:true},
+  {t:"5>10", j:false},
+  {t:"Bumi bulat", j:true}
+];
+
+function start(){
+  nama = document.getElementById("nama").value;
+  if(nama==""){ alert("Isi nama dulu!"); return; }
+
+  document.getElementById("login").style.display="none";
+  document.getElementById("quiz").style.display="block";
+
+  tampilSoal();
+}
+
+function tampilSoal(){
+  document.getElementById("soal").innerText = soal[index].t;
+}
+
+function jawab(j){
+  if(j == soal[index].j){
+    skor++;
+  }
+
+  index++;
+
+  if(index < soal.length){
+    tampilSoal();
+  } else {
+    selesai();
+  }
+}
+
+function selesai(){
+  document.getElementById("quiz").style.display="none";
+  document.getElementById("hasil").style.display="block";
+  document.getElementById("skor").innerText = skor;
+
+  let data = JSON.parse(localStorage.getItem("rank")) || [];
+  data.push({nama:nama, skor:skor});
+
+  data.sort((a,b)=>b.skor-a.skor);
+
+  localStorage.setItem("rank", JSON.stringify(data));
+
+  let list = document.getElementById("leaderboard");
+  list.innerHTML="";
+
+  data.slice(0,5).forEach(d=>{
+    let li = document.createElement("li");
+    li.innerText = d.nama + " - " + d.skor;
+    list.appendChild(li);
+  });
+}
+</script>
+
 </body>
 </html>
-
