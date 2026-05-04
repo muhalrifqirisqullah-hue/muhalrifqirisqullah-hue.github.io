@@ -1,62 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Quiz Ulaa 🚀</title>
+  <title>Quiz Ulaa Pro 🚀</title>
   <style>
     body{
-      background:#0f172a;
+      background:linear-gradient(135deg,#0f172a,#1e293b);
       color:white;
       font-family:sans-serif;
       text-align:center;
+      animation: fade 1s;
+    }
+    @keyframes fade{
+      from{opacity:0}
+      to{opacity:1}
     }
     h1{color:#38bdf8;}
     button{
       padding:10px;
       margin:5px;
       border:none;
-      border-radius:10px;
+      border-radius:12px;
       background:#f97316;
       color:white;
       font-size:16px;
+      transition:0.2s;
+    }
+    button:hover{
+      transform:scale(1.1);
     }
     input{
       padding:10px;
       border-radius:10px;
       border:none;
     }
-    li{
-      list-style:none;
-      margin:10px;
-      padding:10px;
+    .card{
       background:#1e293b;
-      border-radius:10px;
+      padding:20px;
+      border-radius:15px;
+      margin:20px;
+      animation:fade 0.5s;
     }
   </style>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div id="login">
-  <h1>Masuk Game 🚀</h1>
-  <input id="namaInput" placeholder="Masukkan nama kamu">
-  <br><br>
+<div id="login" class="card">
+  <h1>🚀 Quiz Ulaa</h1>
+  <input id="namaInput" placeholder="Nama kamu"><br><br>
+
+  <p>Pilih jumlah soal:</p>
+  <input type="number" id="jumlahSoal" value="3" min="1" max="10"><br><br>
+
   <button onclick="mulai()">Mulai</button>
 </div>
 
 <!-- QUIZ -->
-<div id="quiz" style="display:none;">
+<div id="quiz" class="card" style="display:none;">
   <h2 id="pertanyaan"></h2>
+  <p>⏱️ Waktu: <span id="timer">10</span>s</p>
   <div id="jawaban"></div>
 </div>
 
 <!-- HASIL -->
-<div id="hasil" style="display:none;">
-  <h2>Skor kamu: <span id="skor"></span></h2>
-  <button onclick="lihatRanking()">Lihat Ranking</button>
+<div id="hasil" class="card" style="display:none;">
+  <h2>🔥 Skor kamu: <span id="skor"></span></h2>
+  <button onclick="lihatRanking()">🏆 Lihat Ranking</button>
 </div>
 
 <!-- RANKING -->
-<div id="ranking" style="display:none;">
+<div id="ranking" class="card" style="display:none;">
   <h2>🌍 Ranking Global</h2>
   <ul id="leaderboard"></ul>
 </div>
@@ -69,60 +82,90 @@
 const firebaseConfig = {
   apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
   authDomain: "ullahh-f696a.firebaseapp.com",
-  projectId: "ullahh-f696a",
-  storageBucket: "ullahh-f696a.firebasestorage.app",
-  messagingSenderId: "29708567375",
-  appId: "1:29708567375:web:0567906680230741b07b3a"
+  projectId: "ullahh-f696a"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// DATA SOAL
-let soal = [
+// SOAL
+let semuaSoal = [
   {q:"2 + 2 = ?", a:["3","4","5"], benar:1},
   {q:"5 x 2 = ?", a:["10","8","6"], benar:0},
-  {q:"10 - 3 = ?", a:["5","7","8"], benar:1}
+  {q:"10 - 3 = ?", a:["5","7","8"], benar:1},
+  {q:"IQ: 8, 16, 32, ?", a:["64","48","40"], benar:0},
+  {q:"3² = ?", a:["6","9","12"], benar:1}
 ];
 
+let soal = [];
 let index = 0;
 let skor = 0;
 let nama = "";
+let waktu = 10;
+let timer;
 
 // MULAI
 function mulai(){
   nama = document.getElementById("namaInput").value;
-  if(nama == ""){
+  let jumlah = document.getElementById("jumlahSoal").value;
+
+  if(nama==""){
     alert("Isi nama dulu!");
     return;
   }
+
+  soal = semuaSoal.sort(()=>0.5 - Math.random()).slice(0,jumlah);
+
   document.getElementById("login").style.display="none";
   document.getElementById("quiz").style.display="block";
+
   tampilSoal();
+}
+
+// TIMER
+function startTimer(){
+  waktu = 10;
+  document.getElementById("timer").innerText = waktu;
+
+  timer = setInterval(()=>{
+    waktu--;
+    document.getElementById("timer").innerText = waktu;
+
+    if(waktu <= 0){
+      clearInterval(timer);
+      index++;
+      nextSoal();
+    }
+  },1000);
 }
 
 // TAMPIL SOAL
 function tampilSoal(){
   let s = soal[index];
   document.getElementById("pertanyaan").innerText = s.q;
+
   let jawaban = document.getElementById("jawaban");
   jawaban.innerHTML="";
 
   s.a.forEach((j,i)=>{
     let btn = document.createElement("button");
     btn.innerText = j;
-    btn.onclick = ()=>cekJawaban(i);
+    btn.onclick = ()=>{
+      clearInterval(timer);
+      if(i == s.benar){
+        skor += 10;
+      }
+      index++;
+      nextSoal();
+    };
     jawaban.appendChild(btn);
   });
+
+  startTimer();
 }
 
-// CEK JAWABAN
-function cekJawaban(i){
-  if(i == soal[index].benar){
-    skor += 10;
-  }
-
-  index++;
+// NEXT
+function nextSoal(){
   if(index < soal.length){
     tampilSoal();
   } else {
@@ -136,21 +179,18 @@ function selesai(){
   document.getElementById("hasil").style.display="block";
   document.getElementById("skor").innerText = skor;
 
-  // SIMPAN KE FIREBASE
   db.collection("leaderboard").add({
-    nama: nama,
-    skor: skor,
-    waktu: Date.now()
+    nama:nama,
+    skor:skor
   });
 }
 
-// LIHAT RANKING
+// RANKING
 function lihatRanking(){
   document.getElementById("hasil").style.display="none";
   document.getElementById("ranking").style.display="block";
 }
 
-// REALTIME LEADERBOARD
 db.collection("leaderboard")
 .orderBy("skor","desc")
 .limit(100)
