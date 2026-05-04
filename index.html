@@ -1,222 +1,185 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IQ Battle World 🌍</title>
+<title>IQ Battle Online 😈</title>
 
 <style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-  color:white;
-  text-align:center;
+body {
+  font-family: Arial;
+  text-align: center;
+  background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
+  color: white;
 }
 
-h1{margin-top:20px;}
-
-.container{
-  padding:20px;
+.container {
+  margin-top: 50px;
 }
 
-.card{
-  background:#ffffff11;
-  border-radius:15px;
-  padding:20px;
-  margin:10px;
-  backdrop-filter: blur(10px);
-  animation:fade 0.5s;
+button {
+  padding: 15px 25px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #ff4757;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-button{
-  width:80%;
-  padding:12px;
-  margin:8px;
-  border:none;
-  border-radius:10px;
-  background:limegreen;
-  color:white;
-  font-size:16px;
+button:hover {
+  transform: scale(1.1);
 }
 
-button:hover{opacity:0.8;}
-
-.hidden{display:none;}
-
-@keyframes fade{
-  from{opacity:0; transform:translateY(20px);}
-  to{opacity:1;}
+#question {
+  font-size: 30px;
+  margin: 20px;
 }
 
-.footer{
-  margin-top:30px;
-  font-size:12px;
-  opacity:0.7;
+input {
+  padding: 10px;
+  font-size: 18px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🧠 IQ Battle World</h1>
+<div class="container">
+  <h1>🔥 IQ Battle Online</h1>
 
-<div id="menu" class="container">
-  <div class="card">
-    <input id="nama" placeholder="Nama kamu"><br><br>
+  <input id="username" placeholder="Masukkan Nama"><br><br>
 
-    <h3>Pilih Level</h3>
-    <button onclick="start('easy')">Easy 😊</button>
-    <button onclick="start('medium')">Medium 😐</button>
-    <button onclick="start('hard')">Hard 😈</button>
-    <button onclick="start('extreme')">Extreme 💀</button>
+  <button onclick="findMatch()">🔥 Cari Lawan</button>
 
-    <br><br>
-    <button onclick="openSetting()">⚙️ Settings</button>
-  </div>
+  <h2 id="status"></h2>
+  <h1 id="question"></h1>
+
+  <input id="answer" placeholder="Jawaban"><br><br>
+  <button onclick="submitAnswer()">Jawab</button>
+
+  <h3 id="result"></h3>
+
+  <p style="margin-top:50px; font-size:12px;">By Ullah Dev 🚀</p>
 </div>
 
-<div id="game" class="container hidden">
-  <div class="card">
-    <h3 id="timer"></h3>
-    <h2 id="soal"></h2>
-    <div id="jawaban"></div>
-  </div>
-</div>
+<audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
 
-<div id="hasil" class="container hidden">
-  <div class="card">
-    <h2 id="skor"></h2>
-    <button onclick="ulang()">Main Lagi</button>
-  </div>
-</div>
+<script type="module">
 
-<div id="setting" class="container hidden">
-  <div class="card">
-    <h2>⚙️ Settings</h2>
-    <label>
-      Sound:
-      <input type="checkbox" id="sound" checked>
-    </label>
-    <br><br>
-    <button onclick="closeSetting()">Kembali</button>
-  </div>
-</div>
+// 🔥 IMPORT FIREBASE (WAJIB BEGINI)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<div class="footer">
-  Dibuat oleh Ulaa 🚀
-</div>
-
-<script>
-let soalDB = {
-easy:[
-{q:"Hewan tanpa kaki?",a:["Ular","Kucing","Ayam"],b:0},
-{q:"Air berwarna?",a:["Biru","Hijau","Bening"],b:2}
-],
-medium:[
-{q:"Ibukota Jepang?",a:["Tokyo","Seoul","Beijing"],b:0},
-{q:"5x6=?",a:["30","25","35"],b:0}
-],
-hard:[
-{q:"Jika 2,4,8,16,... berikutnya?",a:["18","32","24"],b:1},
-{q:"Benda untuk melihat jauh?",a:["Teleskop","Mikroskop","Kaca"],b:0}
-],
-extreme:[
-{q:"Jika semua A adalah B, dan B adalah C?",a:["A adalah C","C adalah A","Tidak pasti"],b:0},
-{q:"100/5+20=?",a:["40","30","50"],b:0}
-]
+// 🔑 CONFIG KAMU (SUDAH DIPASANG)
+const firebaseConfig = {
+  apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
+  authDomain: "ullahh-f696a.firebaseapp.com",
+  projectId: "ullahh-f696a",
+  storageBucket: "ullahh-f696a.firebasestorage.app",
+  messagingSenderId: "29708567375",
+  appId: "1:29708567375:web:5097ef9d64fd9439b07b3a",
+  measurementId: "G-5X2YQ3QKFM"
 };
 
-let soal, index, score, timer, soundOn=true;
+// 🚀 INIT
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-let audioBenar = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
-let audioSalah = new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3");
-
-function start(level){
-  let nama=document.getElementById("nama").value;
-  if(!nama)return alert("Isi nama!");
-
-  soundOn=document.getElementById("sound").checked;
-
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
-
-  soal=[...soalDB[level]].sort(()=>Math.random()-0.5);
-  index=0;
-  score=0;
-
-  tampil();
+// 🎲 SOAL RANDOM
+function randomQuestion() {
+  let a = Math.floor(Math.random() * 10);
+  let b = Math.floor(Math.random() * 10);
+  return {
+    q: `${a} + ${b} = ?`,
+    a: (a + b).toString()
+  };
 }
 
-function tampil(){
-  if(index>=soal.length){
-    selesai();
-    return;
-  }
+let currentRoom = null;
+let correctAnswer = "";
 
-  let s=soal[index];
-  document.getElementById("soal").innerText=s.q;
+// 🔍 MATCHMAKING
+window.findMatch = async function () {
+  playSound();
 
-  let html="";
-  s.a.forEach((j,i)=>{
-    html+=`<button onclick="jawab(${i})">${j}</button>`;
+  const username = document.getElementById("username").value;
+  if (!username) return alert("Isi nama dulu!");
+
+  document.getElementById("status").innerText = "Mencari lawan...";
+
+  const roomsRef = collection(db, "rooms");
+  const snapshot = await getDocs(roomsRef);
+
+  let joined = false;
+
+  snapshot.forEach(async (room) => {
+    let data = room.data();
+
+    if (data.status === "waiting" && !data.player2 && !joined) {
+      await updateDoc(doc(db, "rooms", room.id), {
+        player2: username,
+        status: "playing"
+      });
+      joined = true;
+      startBattle(room.id);
+    }
   });
 
-  document.getElementById("jawaban").innerHTML=html;
+  if (!joined) {
+    const q = randomQuestion();
 
-  startTimer();
-}
+    const newRoom = await addDoc(roomsRef, {
+      player1: username,
+      player2: null,
+      status: "waiting",
+      question: q.q,
+      answer: q.a
+    });
 
-function jawab(i){
-  if(i===soal[index].b){
-    score+=10;
-    if(soundOn)audioBenar.play();
-  }else{
-    if(soundOn)audioSalah.play();
+    startBattle(newRoom.id);
   }
+};
 
-  index++;
-  tampil();
-}
+// ⚔️ REALTIME
+function startBattle(roomId) {
+  currentRoom = roomId;
 
-function startTimer(){
-  let t=10;
-  document.getElementById("timer").innerText="⏱️ "+t;
+  const roomRef = doc(db, "rooms", roomId);
 
-  clearInterval(timer);
-  timer=setInterval(()=>{
-    t--;
-    document.getElementById("timer").innerText="⏱️ "+t;
+  onSnapshot(roomRef, (docSnap) => {
+    const data = docSnap.data();
+    if (!data) return;
 
-    if(t<=0){
-      clearInterval(timer);
-      index++;
-      tampil();
+    if (data.player2) {
+      document.getElementById("status").innerText = "😈 Battle Dimulai!";
+      document.getElementById("question").innerText = data.question;
+      correctAnswer = data.answer;
+    } else {
+      document.getElementById("status").innerText = "Menunggu lawan...";
     }
-  },1000);
+  });
 }
 
-function selesai(){
-  clearInterval(timer);
+// ✅ JAWAB
+window.submitAnswer = function () {
+  playSound();
 
-  document.getElementById("game").classList.add("hidden");
-  document.getElementById("hasil").classList.remove("hidden");
+  const userAnswer = document.getElementById("answer").value;
 
-  document.getElementById("skor").innerText="Skor kamu: "+score;
+  if (userAnswer === correctAnswer) {
+    document.getElementById("result").innerText = "🔥 BENAR!";
+  } else {
+    document.getElementById("result").innerText = "❌ SALAH!";
+  }
+};
+
+// 🔊 SOUND
+function playSound() {
+  document.getElementById("clickSound").play();
 }
 
-function ulang(){
-  location.reload();
-}
-
-function openSetting(){
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("setting").classList.remove("hidden");
-}
-
-function closeSetting(){
-  document.getElementById("setting").classList.add("hidden");
-  document.getElementById("menu").classList.remove("hidden");
-}
 </script>
 
 </body>
