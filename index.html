@@ -1,11 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Test</title>
+  <title>BrainRank World 🌍</title>
+  <style>
+    body{
+      font-family:sans-serif;
+      text-align:center;
+      background:#111;
+      color:white;
+    }
+    button{
+      padding:10px;
+      margin:5px;
+      border:none;
+      border-radius:10px;
+      background:limegreen;
+      color:white;
+    }
+  </style>
 </head>
-<body style="background:black;color:white;text-align:center">
 
-<h1>🔥 WEBSITE HIDUP 🔥</h1>
+<body>
+
+<h1>🧠 BrainRank World</h1>
+
+<div id="menu">
+  <input id="nama" placeholder="Nama kamu"><br><br>
+  <button onclick="start()">Mulai 🚀</button>
+</div>
+
+<div id="game" style="display:none">
+  <h2 id="timer"></h2>
+  <h3 id="soal"></h3>
+  <div id="jawaban"></div>
+</div>
+
+<div id="hasil" style="display:none">
+  <h2 id="skor"></h2>
+  <button onclick="ulang()">Main Lagi</button>
+</div>
+
+<script>
+let semuaSoal = [
+  {q:"Hewan tanpa kaki?", a:["Ular","Kucing","Ayam"], b:0},
+  {q:"Ibukota Indonesia?", a:["Jakarta","Bandung","Surabaya"], b:0},
+  {q:"2+2=?", a:["3","4","5"], b:1},
+  {q:"Planet kita?", a:["Mars","Bumi","Venus"], b:1}
+];
+
+let soal, index, score, timer;
+
+function start(){
+  let nama = document.getElementById("nama").value;
+  if(!nama) return alert("Isi nama!");
+
+  document.getElementById("menu").style.display="none";
+  document.getElementById("game").style.display="block";
+
+  soal = semuaSoal.sort(()=>Math.random()-0.5);
+  index = 0;
+  score = 0;
+
+  tampil();
+}
+
+function tampil(){
+  if(index >= soal.length){
+    selesai();
+    return;
+  }
+
+  let s = soal[index];
+  document.getElementById("soal").innerText = s.q;
+
+  let html="";
+  s.a.forEach((j,i)=>{
+    html += `<button onclick="jawab(${i})">${j}</button><br>`;
+  });
+
+  document.getElementById("jawaban").innerHTML = html;
+
+  startTimer();
+}
+
+function jawab(i){
+  if(i === soal[index].b){
+    score += 10;
+  }
+  index++;
+  tampil();
+}
+
+function startTimer(){
+  let t = 10;
+  document.getElementById("timer").innerText = "⏱️ "+t;
+
+  clearInterval(timer);
+  timer = setInterval(()=>{
+    t--;
+    document.getElementById("timer").innerText = "⏱️ "+t;
+
+    if(t <= 0){
+      clearInterval(timer);
+      index++;
+      tampil();
+    }
+  },1000);
+}
+
+function selesai(){
+  clearInterval(timer);
+
+  document.getElementById("game").style.display="none";
+  document.getElementById("hasil").style.display="block";
+
+  document.getElementById("skor").innerText =
+    "Skor kamu: "+score;
+}
+
+function ulang(){
+  location.reload();
+}
+</script>
 
 </body>
 </html>
