@@ -2,36 +2,11 @@
 <html>
 <head>
   <title>BrainRank World 🌍</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } 
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "ISI PUNYA KAMU",
-      authDomain: "ISI PUNYA KAMU",
-      projectId: "ISI PUNYA KAMU",
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    window.simpanScore = async function(nama, skor){
-      await addDoc(collection(db,"leaderboard"), {nama, skor});
-    }
-
-    window.ambilRanking = async function(){
-      const q = query(collection(db,"leaderboard"), orderBy("skor","desc"), limit(10));
-      const snap = await getDocs(q);
-      let hasil = [];
-      snap.forEach(doc => hasil.push(doc.data()));
-      return hasil;
-    }
-  </script>
 </head>
 
 <body style="font-family:sans-serif;text-align:center;background:#111;color:white">
 
+<!-- LOGIN -->
 <div id="login">
   <h1>🧠 BrainRank World</h1>
   <input id="nama" placeholder="Masukkan nama"><br><br>
@@ -43,61 +18,88 @@
   <button onclick="start('extreme')">Extreme 🔥</button>
 </div>
 
+<!-- GAME -->
 <div id="game" style="display:none">
   <h2 id="timer"></h2>
   <h3 id="soal"></h3>
   <div id="jawaban"></div>
 </div>
 
+<!-- HASIL -->
 <div id="hasil" style="display:none">
   <h2 id="skor"></h2>
   <button onclick="lihatRanking()">Lihat Ranking</button>
 </div>
 
+<!-- RANKING -->
 <div id="ranking" style="display:none">
-  <h2>🏆 Ranking Dunia</h2>
+  <h2>🏆 Ranking</h2>
   <ol id="list"></ol>
 </div>
 
 <script>
+// ================= SOAL CAMPURAN =================
 let semuaSoal = [
   {q:"2+2=?", a:["3","4","5"], b:1},
+  {q:"10-3=?", a:["5","7","8"], b:1},
+  {q:"6x2=?", a:["12","10","8"], b:0},
+
   {q:"Hewan tanpa kaki?", a:["Ular","Kucing","Ayam"], b:0},
-  {q:"Ibukota Indonesia?", a:["Jakarta","Bandung","Bali"], b:0},
+  {q:"Hewan terbesar?", a:["Gajah","Paus Biru","Singa"], b:1},
+
   {q:"Apa yang naik terus?", a:["Umur","Air","Bola"], b:0},
-  {q:"Ayam bertelur di atap?", a:["Kiri","Kanan","Tidak"], b:2},
-  {q:"5x5=?", a:["10","20","25"], b:2},
-  {q:"Planet kita?", a:["Mars","Bumi","Venus"], b:1},
-  {q:"Air mendidih?", a:["100°C","50°C","200°C"], b:0}
+  {q:"Apa yang tidak bisa dilihat?", a:["Angin","Batu","Kayu"], b:0},
+
+  {q:"Ayam bertelur di atap?", a:["Kiri","Kanan","Tidak bertelur"], b:2},
+  {q:"Apa yang selalu di depan?", a:["Masa depan","Masa lalu","Air"], b:0},
+
+  {q:"Ibukota Indonesia?", a:["Jakarta","Bandung","Surabaya"], b:0},
+  {q:"Air mendidih?", a:["100°C","50°C","200°C"], b:0},
+  {q:"Planet kita?", a:["Mars","Bumi","Venus"], b:1}
 ];
 
+// ================= VAR =================
 let soal = [];
 let index = 0;
 let score = 0;
 let waktu = 10;
 let timer;
 
+// ================= START =================
 function start(level){
   let nama = document.getElementById("nama").value;
-  if(!nama) return alert("Isi nama!");
+  if(!nama) return alert("Isi nama dulu!");
 
   document.getElementById("login").style.display="none";
   document.getElementById("game").style.display="block";
 
-  // SET LEVEL
-  if(level=="easy"){waktu=15;}
-  if(level=="medium"){waktu=10;}
-  if(level=="hard"){waktu=7;}
-  if(level=="extreme"){waktu=5;}
+  let jumlahSoal = 5;
 
-  soal = semuaSoal.sort(()=>0.5-Math.random()).slice(0,5);
-  index=0;
-  score=0;
+  if(level=="easy"){waktu=15; jumlahSoal=5;}
+  if(level=="medium"){waktu=10; jumlahSoal=7;}
+  if(level=="hard"){waktu=7; jumlahSoal=10;}
+  if(level=="extreme"){waktu=5; jumlahSoal=12;}
+
+  soal = shuffle(semuaSoal).slice(0,jumlahSoal);
+
+  index = 0;
+  score = 0;
+
   tampilSoal();
 }
 
+// ================= ACAK =================
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    let j = Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+
+// ================= TAMPIL =================
 function tampilSoal(){
-  if(index>=soal.length){
+  if(index >= soal.length){
     selesai();
     return;
   }
@@ -105,29 +107,33 @@ function tampilSoal(){
   let s = soal[index];
   document.getElementById("soal").innerText = s.q;
 
-  let jawabanHTML="";
+  let html="";
   s.a.forEach((j,i)=>{
-    jawabanHTML += `<button onclick="jawab(${i})">${j}</button><br>`;
+    html += `<button onclick="jawab(${i})">${j}</button><br>`;
   });
 
-  document.getElementById("jawaban").innerHTML = jawabanHTML;
+  document.getElementById("jawaban").innerHTML = html;
 
   startTimer();
 }
 
+// ================= JAWAB =================
 function jawab(i){
-  if(i===soal[index].b){
-    score+=10;
+  if(i === soal[index].b){
+    score += 10;
   }
+
   index++;
   tampilSoal();
 }
 
+// ================= TIMER =================
 function startTimer(){
   let t = waktu;
   document.getElementById("timer").innerText = "⏱️ "+t;
 
   clearInterval(timer);
+
   timer = setInterval(()=>{
     t--;
     document.getElementById("timer").innerText = "⏱️ "+t;
@@ -140,25 +146,39 @@ function startTimer(){
   },1000);
 }
 
-async function selesai(){
+// ================= SELESAI =================
+function selesai(){
   clearInterval(timer);
 
   document.getElementById("game").style.display="none";
   document.getElementById("hasil").style.display="block";
 
-  let nama = document.getElementById("nama").value;
   document.getElementById("skor").innerText = "Skor kamu: "+score;
 
-  await simpanScore(nama, score);
+  simpanLocal();
 }
 
-async function lihatRanking(){
+// ================= SIMPAN LOCAL =================
+function simpanLocal(){
+  let nama = document.getElementById("nama").value;
+
+  let data = JSON.parse(localStorage.getItem("rank")) || [];
+  data.push({nama, skor:score});
+
+  data.sort((a,b)=>b.skor-a.skor);
+
+  localStorage.setItem("rank", JSON.stringify(data));
+}
+
+// ================= RANKING =================
+function lihatRanking(){
   document.getElementById("hasil").style.display="none";
   document.getElementById("ranking").style.display="block";
 
-  let data = await ambilRanking();
+  let data = JSON.parse(localStorage.getItem("rank")) || [];
+
   let html="";
-  data.forEach((d,i)=>{
+  data.slice(0,10).forEach((d,i)=>{
     html += `<li>🏆 #${i+1} - ${d.nama} (${d.skor})</li>`;
   });
 
