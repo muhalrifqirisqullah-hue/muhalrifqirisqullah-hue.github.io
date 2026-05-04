@@ -2,145 +2,133 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>GAME WORLD 😈</title>
+<title>GAME ENGINE 😈</title>
 
 <style>
 body{
-  background:#0f172a;
-  color:white;
-  text-align:center;
-  font-family:Arial;
-}
-
-#game{
-  width:400px;
-  height:400px;
-  background:#1e293b;
-  margin:auto;
-  position:relative;
+  margin:0;
+  background:black;
   overflow:hidden;
 }
-
-#player{
-  width:20px;
-  height:20px;
-  background:lime;
-  position:absolute;
-  top:50px;
-  left:50px;
-}
-
-.box{
-  width:20px;
-  height:20px;
-  background:red;
-  position:absolute;
-}
-
-#quiz{
-  margin-top:10px;
+canvas{
+  display:block;
+  margin:auto;
+  background:#111827;
 }
 </style>
 </head>
 
 <body>
 
-<h2>💀 GAME WORLD QUIZ</h2>
-
-<div id="game">
-  <div id="player"></div>
-</div>
-
-<div id="quiz">
-  <h3 id="q"></h3>
-  <input id="a">
-  <button onclick="answer()">Jawab</button>
-  <h3 id="score">Score: 0</h3>
-</div>
+<canvas id="game"></canvas>
 
 <script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-let player=document.getElementById("player");
-let x=50,y=50;
-let score=0;
-let correct="";
-let boxEl;
+canvas.width = 400;
+canvas.height = 400;
 
-// GERAK
+// ================= PLAYER =================
+let player = {
+  x:100,
+  y:100,
+  size:20,
+  speed:2
+};
+
+// ================= CONTROL =================
+let keys = {};
+
 document.addEventListener("keydown",e=>{
-  if(e.key=="w") y-=10;
-  if(e.key=="s") y+=10;
-  if(e.key=="a") x-=10;
-  if(e.key=="d") x+=10;
-
-  player.style.top=y+"px";
-  player.style.left=x+"px";
-
-  checkHit();
+  keys[e.key]=true;
+});
+document.addEventListener("keyup",e=>{
+  keys[e.key]=false;
 });
 
-// SPAWN BOX
-function spawnBox(){
-  if(boxEl) boxEl.remove();
+// ================= MAP =================
+const tileSize = 40;
+const map = [
+[1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,0,0,1],
+[1,0,1,1,0,0,1,0,0,1],
+[1,0,0,0,0,0,1,0,0,1],
+[1,0,0,1,1,0,0,0,0,1],
+[1,0,0,0,0,0,0,1,0,1],
+[1,0,1,0,0,0,0,0,0,1],
+[1,0,0,0,1,1,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1],
+];
 
-  boxEl=document.createElement("div");
-  boxEl.className="box";
+// ================= COLLISION =================
+function isWall(x,y){
+  let gx = Math.floor(x/tileSize);
+  let gy = Math.floor(y/tileSize);
 
-  let bx=Math.random()*360;
-  let by=Math.random()*360;
-
-  boxEl.style.left=bx+"px";
-  boxEl.style.top=by+"px";
-
-  document.getElementById("game").appendChild(boxEl);
+  return map[gy][gx] === 1;
 }
 
-// DETEKSI SENTUH
-function checkHit(){
-  if(!boxEl) return;
+// ================= UPDATE =================
+function update(){
+  let newX = player.x;
+  let newY = player.y;
 
-  let px=x, py=y;
-  let bx=parseInt(boxEl.style.left);
-  let by=parseInt(boxEl.style.top);
+  if(keys["w"]) newY -= player.speed;
+  if(keys["s"]) newY += player.speed;
+  if(keys["a"]) newX -= player.speed;
+  if(keys["d"]) newX += player.speed;
 
-  if(Math.abs(px-bx)<20 && Math.abs(py-by)<20){
-    spawnQuestion();
-    boxEl.remove();
+  // collision
+  if(!isWall(newX, player.y)) player.x = newX;
+  if(!isWall(player.x, newY)) player.y = newY;
+}
+
+// ================= DRAW =================
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // CAMERA (player di tengah)
+  let camX = player.x - canvas.width/2;
+  let camY = player.y - canvas.height/2;
+
+  // MAP
+  for(let y=0;y<map.length;y++){
+    for(let x=0;x<map[y].length;x++){
+      if(map[y][x]===1){
+        ctx.fillStyle="#374151";
+      }else{
+        ctx.fillStyle="#1f2937";
+      }
+
+      ctx.fillRect(
+        x*tileSize - camX,
+        y*tileSize - camY,
+        tileSize,
+        tileSize
+      );
+    }
   }
+
+  // PLAYER
+  ctx.fillStyle="lime";
+  ctx.fillRect(
+    player.x - camX,
+    player.y - camY,
+    player.size,
+    player.size
+  );
 }
 
-// SOAL
-function getQ(){
-  let list=[
-    {q:"2+2=?",a:"4"},
-    {q:"Hewan tanpa kaki?",a:"ular"},
-    {q:"Warna langit?",a:"biru"},
-    {q:"Lawan panas?",a:"dingin"}
-  ];
-  return list[Math.floor(Math.random()*list.length)];
+// ================= LOOP =================
+function gameLoop(){
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
 }
 
-function spawnQuestion(){
-  let q=getQ();
-  correct=q.a;
-  document.getElementById("q").innerText=q.q;
-}
-
-// JAWAB
-function answer(){
-  let user=document.getElementById("a").value.toLowerCase();
-
-  if(user==correct){
-    score+=10;
-    document.getElementById("score").innerText="Score: "+score;
-    spawnBox();
-  }else{
-    alert("❌ Salah");
-  }
-}
-
-// START
-spawnBox();
+gameLoop();
 
 </script>
 
