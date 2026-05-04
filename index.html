@@ -3,206 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IQ GOD MODE 💀</title>
+<title>IQ GOD FINAL 💀</title>
 
 <style>
 body{
   margin:0;
   font-family:Arial;
-  background:#121212;
+  background:#0f172a;
   color:white;
   text-align:center;
 }
-.screen{display:none;padding:20px;}
-.active{display:block;}
-
 button{
   padding:12px;
   margin:5px;
   border:none;
-  border-radius:8px;
-  background:#ff4757;
+  border-radius:10px;
+  background:#22c55e;
   color:white;
 }
-
-#chatBox{
-  height:100px;
-  overflow:auto;
-  border:1px solid white;
-  margin:10px;
-  padding:5px;
+input{
+  padding:10px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="menu" class="screen active">
-  <h1>💀 IQ GOD MODE</h1>
-  <input id="name" placeholder="Nama"><br>
-  <button onclick="go('battle')">⚔️ Battle</button>
-  <button onclick="go('solo')">🎯 Solo</button>
-  <button onclick="go('rank')">🌍 Ranking</button>
-</div>
+<h1>💀 IQ GOD FINAL</h1>
 
-<div id="battle" class="screen">
-  <h2>⚔️ Battle</h2>
-  <button onclick="find()">Cari Lawan</button>
-  <h3 id="status"></h3>
-  <h2 id="q"></h2>
-  <h3 id="timer"></h3>
-  <input id="ans">
-  <button onclick="send()">Jawab</button>
+<h2 id="q"></h2>
+<input id="a">
+<br><br>
+<button onclick="check()">Jawab</button>
+<button onclick="next()">Next</button>
 
-  <div id="chatBox"></div>
-  <input id="chatInput">
-  <button onclick="chat()">Kirim</button>
+<h3 id="res"></h3>
+<h3>XP: <span id="xp">0</span></h3>
 
-  <button onclick="go('menu')">⬅️</button>
-</div>
+<script>
 
-<div id="solo" class="screen">
-  <h2 id="sq"></h2>
-  <input id="sa">
-  <button onclick="check()">Jawab</button>
-  <h3 id="sr"></h3>
-  <button onclick="next()">Next</button>
-</div>
+// ===== GENERATOR 1 JUTA SOAL =====
+function generateQuestion(){
 
-<div id="rank" class="screen">
-  <h2>🌍 Ranking</h2>
-  <div id="rankList"></div>
-  <button onclick="go('menu')">⬅️</button>
-</div>
+  let type = Math.floor(Math.random()*5);
 
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
-  authDomain: "ullahh-f696a.firebaseapp.com",
-  projectId: "ullahh-f696a",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// NAV
-window.go=id=>{
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-// SOAL IQ
-function getQ(){
-  const q=[
-    {q:"3+5=?",a:"8"},
-    {q:"Hewan tanpa kaki?",a:"ular"},
-    {q:"10-4=?",a:"6"},
-    {q:"Air beku?",a:"es"},
-    {q:"2x6=?",a:"12"}
-  ];
-  return q[Math.floor(Math.random()*q.length)];
-}
-
-// SOLO
-let cur;
-window.next=()=>{
-  cur=getQ();
-  sq.innerText=cur.q;
-}
-window.check=()=>{
-  if(sa.value.toLowerCase()==cur.a){
-    sr.innerText="🔥 benar";
-    addXP(10);
-  }else sr.innerText="❌ salah";
-}
-
-// XP
-let xp=0;
-function addXP(v){
-  xp+=v;
-  save();
-}
-
-// SAVE
-function save(){
-  localStorage.setItem("xp",xp);
-}
-
-// LOAD
-xp=localStorage.getItem("xp")||0;
-
-// BATTLE
-let answer="";
-window.find=async()=>{
-  let rooms=collection(db,"rooms");
-  let snap=await getDocs(rooms);
-  let joined=false;
-
-  snap.forEach(async r=>{
-    let d=r.data();
-    if(d.status=="wait"&&!d.p2&&!joined){
-      await updateDoc(doc(db,"rooms",r.id),{p2:"ok",status:"play"});
-      start(r.id);
-      joined=true;
-    }
-  });
-
-  if(!joined){
-    let q=getQ();
-    let r=await addDoc(rooms,{p1:"x",p2:null,status:"wait",q:q.q,a:q.a});
-    start(r.id);
+  // 1. MATEMATIKA
+  if(type===0){
+    let a = Math.floor(Math.random()*50);
+    let b = Math.floor(Math.random()*50);
+    return {q:`${a} + ${b} = ?`, a:(a+b).toString()};
   }
+
+  // 2. LOGIKA
+  if(type===1){
+    let arr = ["ular","ikan","burung"];
+    return {q:"Hewan tanpa kaki?", a:"ular"};
+  }
+
+  // 3. BAHASA
+  if(type===2){
+    return {q:"Lawan kata 'panas'?", a:"dingin"};
+  }
+
+  // 4. PSIKOLOGI (pilihan)
+  if(type===3){
+    return {q:"Kamu pilih A atau B? (jawab A/B)", a:"a"};
+  }
+
+  // 5. POLA
+  if(type===4){
+    return {q:"2,4,6,8,...?", a:"10"};
+  }
+
 }
 
-function start(id){
-  const ref=doc(db,"rooms",id);
-  onSnapshot(ref,s=>{
-    let d=s.data();
-    if(d.p2){
-      status.innerText="🔥 mulai";
-      q.innerText=d.q;
-      answer=d.a;
-      startTimer();
-    }
-  });
+let current;
+let xp = localStorage.getItem("xp") || 0;
+
+document.getElementById("xp").innerText = xp;
+
+// NEXT
+function next(){
+  current = generateQuestion();
+  document.getElementById("q").innerText = current.q;
+  document.getElementById("a").value = "";
+  document.getElementById("res").innerText = "";
 }
 
-// TIMER
-function startTimer(){
-  let t=10;
-  timer.innerText=t;
-  let i=setInterval(()=>{
-    t--;
-    timer.innerText=t;
-    if(t<=0) clearInterval(i);
-  },1000);
+// CHECK
+function check(){
+  let user = document.getElementById("a").value.toLowerCase();
+
+  if(user == current.a){
+    document.getElementById("res").innerText = "🔥 BENAR";
+    xp = parseInt(xp) + 10;
+  }else{
+    document.getElementById("res").innerText = "❌ SALAH";
+  }
+
+  document.getElementById("xp").innerText = xp;
+  localStorage.setItem("xp", xp);
 }
 
-// JAWAB
-window.send=()=>{
-  if(ans.value.toLowerCase()==answer){
-    alert("MENANG 😈");
-    addXP(20);
-  }else alert("SALAH");
-}
-
-// CHAT (dummy realtime)
-window.chat=()=>{
-  chatBox.innerHTML+= "<div>"+chatInput.value+"</div>";
-  chatInput.value="";
-}
-
-// RANK
-window.goRank=async()=>{
-  let data=await getDocs(collection(db,"rooms"));
-  rankList.innerHTML="XP kamu: "+xp;
-}
-
-// INIT
+// START
 next();
 
 </script>
