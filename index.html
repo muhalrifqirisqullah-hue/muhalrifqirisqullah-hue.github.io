@@ -2,48 +2,59 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ZEP ONLINE 😈</title>
+<title>FINAL BOSS QUIZ 😈</title>
 
 <style>
 body{
-  margin:0;
   background:#0f172a;
   color:white;
+  font-family:Arial;
   text-align:center;
 }
 
-#game{
-  width:400px;
-  height:400px;
-  margin:auto;
-  position:relative;
+#box{
   background:#1e293b;
+  padding:10px;
+  width:400px;
+  margin:auto;
 }
 
-.player{
-  width:25px;
-  height:25px;
-  position:absolute;
-  border-radius:5px;
+#leaderboard{
+  text-align:left;
+  margin-top:10px;
+}
+
+button{
+  padding:10px;
+  margin:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>🌍 ZEP ONLINE ROOM</h2>
+<h2>💀 FINAL BOSS QUIZ ROOM</h2>
 
-<input id="name" placeholder="Nama">
-<input id="room" placeholder="Room ID">
-<button onclick="joinRoom()">Join</button>
+<input id="name" placeholder="Nama"><br>
+<input id="room" placeholder="Room ID"><br>
 
-<div id="game"></div>
+<button onclick="join()">JOIN</button>
+<button onclick="start()">START (HOST)</button>
+
+<div id="box">
+  <h3 id="timer">⏱️ 0</h3>
+  <h2 id="q"></h2>
+  <input id="a"><br>
+  <button onclick="answer()">Jawab</button>
+
+  <h3>🏆 Ranking</h3>
+  <div id="leaderboard"></div>
+</div>
 
 <script type="module">
 
-// FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
@@ -54,67 +65,106 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// DATA PLAYER
-let playerId = Math.random().toString(36).substr(2,5);
-let roomId = "";
-let x=50, y=50;
+let room="", name="", score=0;
+let correct="";
+let timer=0;
+let interval;
 
-// JOIN ROOM
-window.joinRoom = function(){
-  roomId = document.getElementById("room").value;
-  if(!roomId) return alert("Isi room!");
+// JOIN
+window.join = async function(){
+  room = document.getElementById("room").value;
+  name = document.getElementById("name").value;
 
-  listenPlayers();
+  await setDoc(doc(db,"rooms",room,"players",name),{
+    score:0
+  });
+
+  listen();
 }
 
-// GERAK
-document.addEventListener("keydown", async (e)=>{
-  if(!roomId) return;
+// LISTEN ROOM
+function listen(){
+  onSnapshot(doc(db,"rooms",room),(snap)=>{
+    let d=snap.data();
+    if(!d) return;
 
-  if(e.key=="ArrowUp") y-=5;
-  if(e.key=="ArrowDown") y+=5;
-  if(e.key=="ArrowLeft") x-=5;
-  if(e.key=="ArrowRight") x+=5;
-
-  x=Math.max(0,Math.min(375,x));
-  y=Math.max(0,Math.min(375,y));
-
-  await setDoc(doc(db,"rooms",roomId,"players",playerId),{
-    x,y
-  });
-});
-
-// LISTEN REALTIME
-function listenPlayers(){
-  const playersRef = doc(db,"rooms",roomId);
-
-  onSnapshot(playersRef,()=>{
-    loadPlayers();
+    document.getElementById("q").innerText = d.q;
+    correct = d.a;
+    startTimer(d.time);
   });
 
-  loadPlayers();
+  loadRank();
 }
 
-// LOAD PLAYER
-import { getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// TIMER
+function startTimer(t){
+  clearInterval(interval);
+  timer = t;
 
-async function loadPlayers(){
-  const snap = await getDocs(collection(db,"rooms",roomId,"players"));
+  interval = setInterval(()=>{
+    timer--;
+    document.getElementById("timer").innerText = "⏱️ "+timer;
 
-  const game = document.getElementById("game");
-  game.innerHTML="";
+    if(timer<=0) clearInterval(interval);
+  },1000);
+}
 
-  snap.forEach(p=>{
-    let d=p.data();
+// SOAL
+function getQ(){
+  let list=[
+    {q:"2+2=?",a:"4"},
+    {q:"Hewan tanpa kaki?",a:"ular"},
+    {q:"Lawan panas?",a:"dingin"},
+    {q:"Ibukota Indonesia?",a:"jakarta"}
+  ];
+  return list[Math.floor(Math.random()*list.length)];
+}
 
-    let div=document.createElement("div");
-    div.className="player";
-    div.style.left=d.x+"px";
-    div.style.top=d.y+"px";
-    div.style.background="#"+Math.floor(Math.random()*999999);
+// HOST START
+window.start = async function(){
+  let q=getQ();
 
-    game.appendChild(div);
+  await setDoc(doc(db,"rooms",room),{
+    q:q.q,
+    a:q.a,
+    time:10
   });
+}
+
+// JAWAB
+window.answer = async function(){
+  let user=document.getElementById("a").value.toLowerCase();
+
+  if(user==correct){
+    score+=10;
+
+    await updateDoc(doc(db,"rooms",room,"players",name),{
+      score:score
+    });
+
+    alert("🔥 BENAR");
+  }else{
+    alert("❌ SALAH");
+  }
+
+  loadRank();
+}
+
+// LOAD RANKING
+async function loadRank(){
+  const snap = await getDocs(collection(db,"rooms",room,"players"));
+
+  let arr=[];
+  snap.forEach(d=>arr.push({name:d.id,...d.data()}));
+
+  arr.sort((a,b)=>b.score-a.score);
+
+  let html="";
+  arr.forEach(p=>{
+    html += `<div>${p.name} : ${p.score}</div>`;
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
 }
 
 </script>
