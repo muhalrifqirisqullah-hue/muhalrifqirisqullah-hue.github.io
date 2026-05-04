@@ -3,88 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IQ GAME EXTREME 😈</title>
+<title>IQ GOD MODE 💀</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: linear-gradient(135deg, #1e1e2f, #3a3a6a);
-  color: white;
-  text-align: center;
-  transition: 0.5s;
+body{
+  margin:0;
+  font-family:Arial;
+  background:#121212;
+  color:white;
+  text-align:center;
+}
+.screen{display:none;padding:20px;}
+.active{display:block;}
+
+button{
+  padding:12px;
+  margin:5px;
+  border:none;
+  border-radius:8px;
+  background:#ff4757;
+  color:white;
 }
 
-.screen { display: none; padding: 20px; }
-.active { display: block; }
-
-button {
-  padding: 15px;
-  margin: 10px;
-  border: none;
-  border-radius: 10px;
-  background: #ff4757;
-  color: white;
-  font-size: 18px;
-}
-
-input {
-  padding: 10px;
-  font-size: 18px;
-}
-
-.light {
-  background: #f5f5f5;
-  color: black;
+#chatBox{
+  height:100px;
+  overflow:auto;
+  border:1px solid white;
+  margin:10px;
+  padding:5px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- MENU -->
 <div id="menu" class="screen active">
-  <h1>🔥 IQ GAME</h1>
-  <button onclick="show('battle')">⚔️ Battle Online</button><br>
-  <button onclick="show('solo')">🎯 Main Sendiri</button><br>
-  <button onclick="show('settings')">⚙️ Pengaturan</button>
+  <h1>💀 IQ GOD MODE</h1>
+  <input id="name" placeholder="Nama"><br>
+  <button onclick="go('battle')">⚔️ Battle</button>
+  <button onclick="go('solo')">🎯 Solo</button>
+  <button onclick="go('rank')">🌍 Ranking</button>
 </div>
 
-<!-- BATTLE -->
 <div id="battle" class="screen">
   <h2>⚔️ Battle</h2>
-  <input id="username" placeholder="Nama"><br>
-  <button onclick="findMatch()">Cari Lawan</button>
+  <button onclick="find()">Cari Lawan</button>
   <h3 id="status"></h3>
-  <h2 id="question"></h2>
-  <input id="answer" placeholder="Jawaban">
-  <button onclick="submitAnswer()">Jawab</button>
-  <button onclick="show('menu')">⬅️ Kembali</button>
+  <h2 id="q"></h2>
+  <h3 id="timer"></h3>
+  <input id="ans">
+  <button onclick="send()">Jawab</button>
+
+  <div id="chatBox"></div>
+  <input id="chatInput">
+  <button onclick="chat()">Kirim</button>
+
+  <button onclick="go('menu')">⬅️</button>
 </div>
 
-<!-- SOLO -->
 <div id="solo" class="screen">
-  <h2>🎯 Solo Mode</h2>
-  <h2 id="soloQ"></h2>
-  <input id="soloA">
-  <button onclick="checkSolo()">Jawab</button>
-  <h3 id="soloResult"></h3>
-  <button onclick="nextSolo()">Next</button><br>
-  <button onclick="show('menu')">⬅️ Kembali</button>
+  <h2 id="sq"></h2>
+  <input id="sa">
+  <button onclick="check()">Jawab</button>
+  <h3 id="sr"></h3>
+  <button onclick="next()">Next</button>
 </div>
 
-<!-- SETTINGS -->
-<div id="settings" class="screen">
-  <h2>⚙️ Pengaturan</h2>
-  <button onclick="toggleTheme()">🌗 Ganti Tema</button><br>
-  <button onclick="show('menu')">⬅️ Kembali</button>
+<div id="rank" class="screen">
+  <h2>🌍 Ranking</h2>
+  <div id="rankList"></div>
+  <button onclick="go('menu')">⬅️</button>
 </div>
-
-<audio id="click" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
 
 <script type="module">
 
-// FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -92,125 +84,126 @@ const firebaseConfig = {
   apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
   authDomain: "ullahh-f696a.firebaseapp.com",
   projectId: "ullahh-f696a",
-  storageBucket: "ullahh-f696a.firebasestorage.app",
-  messagingSenderId: "29708567375",
-  appId: "1:29708567375:web:5097ef9d64fd9439b07b3a",
-  measurementId: "G-5X2YQ3QKFM"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// NAVIGASI
-window.show = function(id){
+// NAV
+window.go=id=>{
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  sound();
 }
 
-// SOUND
-function sound(){
-  document.getElementById("click").play();
-}
-
-// ====== SOAL CAMPURAN ======
-function randomQ(){
-  const list = [
-    {q:"2+2=?",a:"4"},
+// SOAL IQ
+function getQ(){
+  const q=[
+    {q:"3+5=?",a:"8"},
     {q:"Hewan tanpa kaki?",a:"ular"},
-    {q:"5x3=?",a:"15"},
-    {q:"Ibukota Jepang?",a:"tokyo"},
-    {q:"Air beku jadi?",a:"es"}
+    {q:"10-4=?",a:"6"},
+    {q:"Air beku?",a:"es"},
+    {q:"2x6=?",a:"12"}
   ];
-  return list[Math.floor(Math.random()*list.length)];
+  return q[Math.floor(Math.random()*q.length)];
 }
 
-// ====== SOLO MODE ======
-let soloNow;
-
-window.nextSolo = function(){
-  soloNow = randomQ();
-  document.getElementById("soloQ").innerText = soloNow.q;
-  document.getElementById("soloResult").innerText = "";
-  document.getElementById("soloA").value = "";
+// SOLO
+let cur;
+window.next=()=>{
+  cur=getQ();
+  sq.innerText=cur.q;
+}
+window.check=()=>{
+  if(sa.value.toLowerCase()==cur.a){
+    sr.innerText="🔥 benar";
+    addXP(10);
+  }else sr.innerText="❌ salah";
 }
 
-window.checkSolo = function(){
-  let ans = document.getElementById("soloA").value.toLowerCase();
-  if(ans === soloNow.a){
-    document.getElementById("soloResult").innerText = "🔥 BENAR!";
-  }else{
-    document.getElementById("soloResult").innerText = "❌ SALAH!";
-  }
+// XP
+let xp=0;
+function addXP(v){
+  xp+=v;
+  save();
 }
 
-// ====== BATTLE ONLINE ======
-let correctAnswer = "";
+// SAVE
+function save(){
+  localStorage.setItem("xp",xp);
+}
 
-window.findMatch = async function(){
-  sound();
-  let name = document.getElementById("username").value;
-  if(!name) return alert("Isi nama!");
+// LOAD
+xp=localStorage.getItem("xp")||0;
 
-  document.getElementById("status").innerText="Mencari...";
-
-  const rooms = collection(db,"rooms");
-  const snap = await getDocs(rooms);
-
+// BATTLE
+let answer="";
+window.find=async()=>{
+  let rooms=collection(db,"rooms");
+  let snap=await getDocs(rooms);
   let joined=false;
 
   snap.forEach(async r=>{
     let d=r.data();
-    if(d.status=="waiting" && !d.player2 && !joined){
-      await updateDoc(doc(db,"rooms",r.id),{
-        player2:name,status:"playing"
-      });
-      joined=true;
+    if(d.status=="wait"&&!d.p2&&!joined){
+      await updateDoc(doc(db,"rooms",r.id),{p2:"ok",status:"play"});
       start(r.id);
+      joined=true;
     }
   });
 
   if(!joined){
-    let q=randomQ();
-    let newR=await addDoc(rooms,{
-      player1:name,player2:null,status:"waiting",
-      question:q.q,answer:q.a
-    });
-    start(newR.id);
+    let q=getQ();
+    let r=await addDoc(rooms,{p1:"x",p2:null,status:"wait",q:q.q,a:q.a});
+    start(r.id);
   }
 }
 
 function start(id){
   const ref=doc(db,"rooms",id);
-  onSnapshot(ref,(snap)=>{
-    let d=snap.data();
-    if(d.player2){
-      document.getElementById("status").innerText="😈 MULAI!";
-      document.getElementById("question").innerText=d.question;
-      correctAnswer=d.answer;
-    }else{
-      document.getElementById("status").innerText="Tunggu lawan...";
+  onSnapshot(ref,s=>{
+    let d=s.data();
+    if(d.p2){
+      status.innerText="🔥 mulai";
+      q.innerText=d.q;
+      answer=d.a;
+      startTimer();
     }
   });
 }
 
-window.submitAnswer=function(){
-  sound();
-  let ans=document.getElementById("answer").value.toLowerCase();
-  if(ans===correctAnswer){
-    alert("🔥 MENANG!");
-  }else{
-    alert("❌ SALAH!");
-  }
+// TIMER
+function startTimer(){
+  let t=10;
+  timer.innerText=t;
+  let i=setInterval(()=>{
+    t--;
+    timer.innerText=t;
+    if(t<=0) clearInterval(i);
+  },1000);
 }
 
-// ====== SETTINGS ======
-window.toggleTheme=function(){
-  document.body.classList.toggle("light");
+// JAWAB
+window.send=()=>{
+  if(ans.value.toLowerCase()==answer){
+    alert("MENANG 😈");
+    addXP(20);
+  }else alert("SALAH");
 }
 
-// AUTO START SOLO
-nextSolo();
+// CHAT (dummy realtime)
+window.chat=()=>{
+  chatBox.innerHTML+= "<div>"+chatInput.value+"</div>";
+  chatInput.value="";
+}
+
+// RANK
+window.goRank=async()=>{
+  let data=await getDocs(collection(db,"rooms"));
+  rankList.innerHTML="XP kamu: "+xp;
+}
+
+// INIT
+next();
 
 </script>
 
