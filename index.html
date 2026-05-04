@@ -3,81 +3,113 @@
 <head>
   <title>Quiz Ulaa 🚀</title>
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      background: black;
-      color: lime;
+    body{
+      background:black;
+      color:white;
+      font-family:sans-serif;
+      text-align:center;
     }
-    .box {
-      margin-top: 50px;
+    button{
+      padding:10px;
+      margin:5px;
+      border:none;
+      border-radius:10px;
+      background:orange;
+      color:white;
+      font-size:16px;
     }
-    button {
-      padding: 10px;
-      margin: 10px;
-      background: lime;
-      border: none;
-      cursor: pointer;
-    }
-    input {
-      padding: 10px;
+    input{
+      padding:10px;
+      border-radius:10px;
+      border:none;
     }
   </style>
 </head>
-
 <body>
 
-<div class="box" id="login">
-  <h1>Masukkan Nama</h1>
-  <input id="nama" placeholder="Nama kamu">
-  <br>
-  <button onclick="start()">Mulai</button>
+<!-- LOGIN -->
+<div id="login">
+  <h1>Login 🚀</h1>
+  <input id="namaInput" placeholder="Masukkan nama"><br><br>
+  <button onclick="mulai()">Masuk</button>
 </div>
 
-<div class="box" id="quiz" style="display:none;">
-  <h2 id="soal"></h2>
-  <button onclick="jawab(true)">Benar</button>
-  <button onclick="jawab(false)">Salah</button>
+<!-- QUIZ -->
+<div id="quiz" style="display:none;">
+  <h2 id="pertanyaan"></h2>
+  <div id="jawaban"></div>
 </div>
 
-<div class="box" id="hasil" style="display:none;">
+<!-- HASIL -->
+<div id="hasil" style="display:none;">
   <h2>Skor kamu: <span id="skor"></span></h2>
-  <h3>Papan Peringkat 🏆</h3>
+  <button onclick="lihatRanking()">Lihat Ranking</button>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="ranking" style="display:none;">
+  <h2>🌍 Ranking Global</h2>
   <ul id="leaderboard"></ul>
 </div>
 
-<script>
-let nama = "";
-let skor = 0;
-let index = 0;
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
+  authDomain: "ullahh-f696a.firebaseapp.com",
+  projectId: "ullahh-f696a",
+  storageBucket: "ullahh-f696a.firebasestorage.app",
+  messagingSenderId: "29708567375",
+  appId: "1:29708567375:web:0567906680230741b07b3a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// DATA QUIZ
 let soal = [
-  {t:"2+2=4", j:true},
-  {t:"5>10", j:false},
-  {t:"Bumi bulat", j:true}
+  {q:"2 + 2 = ?", a:["3","4","5"], benar:1},
+  {q:"5 x 2 = ?", a:["10","8","6"], benar:0},
+  {q:"10 - 3 = ?", a:["5","7","8"], benar:1}
 ];
 
-function start(){
-  nama = document.getElementById("nama").value;
-  if(nama==""){ alert("Isi nama dulu!"); return; }
+let index = 0;
+let skor = 0;
+let nama = "";
 
+// MULAI
+function mulai(){
+  nama = document.getElementById("namaInput").value;
   document.getElementById("login").style.display="none";
   document.getElementById("quiz").style.display="block";
-
   tampilSoal();
 }
 
+// TAMPIL SOAL
 function tampilSoal(){
-  document.getElementById("soal").innerText = soal[index].t;
+  let s = soal[index];
+  document.getElementById("pertanyaan").innerText = s.q;
+  let jawaban = document.getElementById("jawaban");
+  jawaban.innerHTML="";
+
+  s.a.forEach((j,i)=>{
+    let btn = document.createElement("button");
+    btn.innerText = j;
+    btn.onclick = ()=>cekJawaban(i);
+    jawaban.appendChild(btn);
+  });
 }
 
-function jawab(j){
-  if(j == soal[index].j){
-    skor++;
+// CEK JAWABAN
+function cekJawaban(i){
+  if(i == soal[index].benar){
+    skor += 10;
   }
 
   index++;
-
   if(index < soal.length){
     tampilSoal();
   } else {
@@ -85,28 +117,43 @@ function jawab(j){
   }
 }
 
+// SELESAI
 function selesai(){
   document.getElementById("quiz").style.display="none";
   document.getElementById("hasil").style.display="block";
   document.getElementById("skor").innerText = skor;
 
-  let data = JSON.parse(localStorage.getItem("rank")) || [];
-  data.push({nama:nama, skor:skor});
+  // SIMPAN KE FIREBASE
+  db.collection("leaderboard").add({
+    nama: nama,
+    skor: skor,
+    waktu: Date.now()
+  });
+}
 
-  data.sort((a,b)=>b.skor-a.skor);
+// LIHAT RANKING
+function lihatRanking(){
+  document.getElementById("hasil").style.display="none";
+  document.getElementById("ranking").style.display="block";
+}
 
-  localStorage.setItem("rank", JSON.stringify(data));
-
+// REALTIME LEADERBOARD
+db.collection("leaderboard")
+.orderBy("skor","desc")
+.limit(100)
+.onSnapshot(snapshot=>{
   let list = document.getElementById("leaderboard");
   list.innerHTML="";
 
-  data.slice(0,5).forEach(d=>{
+  snapshot.forEach((doc,i)=>{
+    let d = doc.data();
     let li = document.createElement("li");
-    li.innerText = d.nama + " - " + d.skor;
+    li.innerText = `#${i+1} ${d.nama} - ${d.skor}`;
     list.appendChild(li);
   });
-}
+});
 </script>
 
 </body>
 </html>
+
