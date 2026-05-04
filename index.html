@@ -4,17 +4,18 @@
   <title>Quiz Ulaa 🚀</title>
   <style>
     body{
-      background:black;
+      background:#0f172a;
       color:white;
       font-family:sans-serif;
       text-align:center;
     }
+    h1{color:#38bdf8;}
     button{
       padding:10px;
       margin:5px;
       border:none;
       border-radius:10px;
-      background:orange;
+      background:#f97316;
       color:white;
       font-size:16px;
     }
@@ -23,15 +24,23 @@
       border-radius:10px;
       border:none;
     }
+    li{
+      list-style:none;
+      margin:10px;
+      padding:10px;
+      background:#1e293b;
+      border-radius:10px;
+    }
   </style>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div id="login">
-  <h1>Login 🚀</h1>
-  <input id="namaInput" placeholder="Masukkan nama"><br><br>
-  <button onclick="mulai()">Masuk</button>
+  <h1>Masuk Game 🚀</h1>
+  <input id="namaInput" placeholder="Masukkan nama kamu">
+  <br><br>
+  <button onclick="mulai()">Mulai</button>
 </div>
 
 <!-- QUIZ -->
@@ -46,7 +55,7 @@
   <button onclick="lihatRanking()">Lihat Ranking</button>
 </div>
 
-<!-- LEADERBOARD -->
+<!-- RANKING -->
 <div id="ranking" style="display:none;">
   <h2>🌍 Ranking Global</h2>
   <ul id="leaderboard"></ul>
@@ -69,7 +78,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// DATA QUIZ
+// DATA SOAL
 let soal = [
   {q:"2 + 2 = ?", a:["3","4","5"], benar:1},
   {q:"5 x 2 = ?", a:["10","8","6"], benar:0},
@@ -83,6 +92,10 @@ let nama = "";
 // MULAI
 function mulai(){
   nama = document.getElementById("namaInput").value;
+  if(nama == ""){
+    alert("Isi nama dulu!");
+    return;
+  }
   document.getElementById("login").style.display="none";
   document.getElementById("quiz").style.display="block";
   tampilSoal();
@@ -148,7 +161,7 @@ db.collection("leaderboard")
   snapshot.forEach((doc,i)=>{
     let d = doc.data();
     let li = document.createElement("li");
-    li.innerText = `#${i+1} ${d.nama} - ${d.skor}`;
+    li.innerHTML = `🏆 #${i+1} - ${d.nama} (${d.skor})`;
     list.appendChild(li);
   });
 });
@@ -156,4 +169,3 @@ db.collection("leaderboard")
 
 </body>
 </html>
-
