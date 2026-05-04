@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>FINAL BOSS QUIZ 😈</title>
+<title>ZEP FULL SYSTEM 😈</title>
 
 <style>
 body{
@@ -12,16 +12,25 @@ body{
   text-align:center;
 }
 
-#box{
+.box{
   background:#1e293b;
   padding:10px;
   width:400px;
   margin:auto;
+  margin-top:10px;
 }
 
-#leaderboard{
+#chat{
+  height:100px;
+  overflow:auto;
+  background:#020617;
+  padding:5px;
   text-align:left;
-  margin-top:10px;
+}
+
+input{
+  padding:8px;
+  margin:5px;
 }
 
 button{
@@ -33,28 +42,40 @@ button{
 
 <body>
 
-<h2>💀 FINAL BOSS QUIZ ROOM</h2>
+<h2>💀 ZEP QUIZ FULL SYSTEM</h2>
 
 <input id="name" placeholder="Nama"><br>
 <input id="room" placeholder="Room ID"><br>
-
 <button onclick="join()">JOIN</button>
 <button onclick="start()">START (HOST)</button>
 
-<div id="box">
-  <h3 id="timer">⏱️ 0</h3>
+<div class="box" id="lobby">
+  <h3>👥 Lobby</h3>
+  <div id="players"></div>
+
+  <h3>💬 Chat</h3>
+  <div id="chat"></div>
+  <input id="msg" placeholder="Ketik pesan">
+  <button onclick="sendChat()">Kirim</button>
+
+  <h3 id="status">Menunggu...</h3>
+</div>
+
+<div class="box">
+  <h3 id="timer">⏱️</h3>
   <h2 id="q"></h2>
-  <input id="a"><br>
+  <input id="a">
+  <br>
   <button onclick="answer()">Jawab</button>
 
   <h3>🏆 Ranking</h3>
-  <div id="leaderboard"></div>
+  <div id="rank"></div>
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
@@ -66,9 +87,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let room="", name="", score=0;
-let correct="";
-let timer=0;
-let interval;
+let correct="", timer=0, interval;
 
 // JOIN
 window.join = async function(){
@@ -79,21 +98,27 @@ window.join = async function(){
     score:0
   });
 
-  listen();
+  listenRoom();
+  listenPlayers();
+  listenChat();
 }
 
 // LISTEN ROOM
-function listen(){
+function listenRoom(){
   onSnapshot(doc(db,"rooms",room),(snap)=>{
     let d=snap.data();
     if(!d) return;
+
+    document.getElementById("status").innerText = d.status || "Menunggu";
+
+    if(d.status=="start"){
+      document.getElementById("lobby").style.display="none";
+    }
 
     document.getElementById("q").innerText = d.q;
     correct = d.a;
     startTimer(d.time);
   });
-
-  loadRank();
 }
 
 // TIMER
@@ -103,10 +128,43 @@ function startTimer(t){
 
   interval = setInterval(()=>{
     timer--;
-    document.getElementById("timer").innerText = "⏱️ "+timer;
-
+    document.getElementById("timer").innerText="⏱️ "+timer;
     if(timer<=0) clearInterval(interval);
   },1000);
+}
+
+// PLAYER LIST
+function listenPlayers(){
+  onSnapshot(collection(db,"rooms",room,"players"),(snap)=>{
+    let html="";
+    snap.forEach(p=>{
+      html+=`<div>👤 ${p.id}</div>`;
+    });
+    document.getElementById("players").innerHTML=html;
+  });
+}
+
+// CHAT
+window.sendChat = async function(){
+  let msg=document.getElementById("msg").value;
+
+  await addDoc(collection(db,"rooms",room,"chat"),{
+    name:name,
+    text:msg
+  });
+
+  document.getElementById("msg").value="";
+}
+
+function listenChat(){
+  onSnapshot(collection(db,"rooms",room,"chat"),(snap)=>{
+    let html="";
+    snap.forEach(c=>{
+      let d=c.data();
+      html+=`<div><b>${d.name}:</b> ${d.text}</div>`;
+    });
+    document.getElementById("chat").innerHTML=html;
+  });
 }
 
 // SOAL
@@ -120,14 +178,15 @@ function getQ(){
   return list[Math.floor(Math.random()*list.length)];
 }
 
-// HOST START
+// START
 window.start = async function(){
   let q=getQ();
 
   await setDoc(doc(db,"rooms",room),{
     q:q.q,
     a:q.a,
-    time:10
+    time:10,
+    status:"start"
   });
 }
 
@@ -150,7 +209,7 @@ window.answer = async function(){
   loadRank();
 }
 
-// LOAD RANKING
+// RANKING
 async function loadRank(){
   const snap = await getDocs(collection(db,"rooms",room,"players"));
 
@@ -161,10 +220,10 @@ async function loadRank(){
 
   let html="";
   arr.forEach(p=>{
-    html += `<div>${p.name} : ${p.score}</div>`;
+    html+=`<div>${p.name} : ${p.score}</div>`;
   });
 
-  document.getElementById("leaderboard").innerHTML = html;
+  document.getElementById("rank").innerHTML=html;
 }
 
 </script>
