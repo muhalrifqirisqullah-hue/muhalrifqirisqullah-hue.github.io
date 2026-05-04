@@ -2,154 +2,119 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ZEP Quiz Clone 😈</title>
+<title>ZEP ONLINE 😈</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #0f172a;
-  color: white;
+body{
+  margin:0;
+  background:#0f172a;
+  color:white;
+  text-align:center;
 }
 
-#game {
-  width: 400px;
-  height: 400px;
-  margin: auto;
-  position: relative;
-  background: #1e293b;
-  border: 3px solid #38bdf8;
+#game{
+  width:400px;
+  height:400px;
+  margin:auto;
+  position:relative;
+  background:#1e293b;
 }
 
-.player {
-  width: 30px;
-  height: 30px;
-  background: #22c55e;
-  position: absolute;
-  border-radius: 5px;
-}
-
-.box {
-  width: 30px;
-  height: 30px;
-  background: #ef4444;
-  position: absolute;
-  border-radius: 5px;
-}
-
-#quizBox {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: #020617;
-  padding: 20px;
-  display: none;
-}
-
-button {
-  padding: 10px;
-  margin-top: 10px;
+.player{
+  width:25px;
+  height:25px;
+  position:absolute;
+  border-radius:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2 style="text-align:center;">🔥 ZEP QUIZ CLONE</h2>
+<h2>🌍 ZEP ONLINE ROOM</h2>
 
-<div id="game">
-  <div id="player" class="player"></div>
-</div>
+<input id="name" placeholder="Nama">
+<input id="room" placeholder="Room ID">
+<button onclick="joinRoom()">Join</button>
 
-<div id="quizBox">
-  <h3 id="question"></h3>
-  <input id="answer">
-  <br>
-  <button onclick="submitAnswer()">Jawab</button>
-</div>
+<div id="game"></div>
 
-<script>
+<script type="module">
 
-let game = document.getElementById("game");
-let player = document.getElementById("player");
+// FIREBASE
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let x = 50, y = 50;
-player.style.left = x+"px";
-player.style.top = y+"px";
+const firebaseConfig = {
+  apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
+  authDomain: "ullahh-f696a.firebaseapp.com",
+  projectId: "ullahh-f696a"
+};
 
-// GERAK KEYBOARD
-document.addEventListener("keydown", e=>{
-  if(e.key=="ArrowUp") y-=10;
-  if(e.key=="ArrowDown") y+=10;
-  if(e.key=="ArrowLeft") x-=10;
-  if(e.key=="ArrowRight") x+=10;
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  x=Math.max(0,Math.min(370,x));
-  y=Math.max(0,Math.min(370,y));
+// DATA PLAYER
+let playerId = Math.random().toString(36).substr(2,5);
+let roomId = "";
+let x=50, y=50;
 
-  player.style.left=x+"px";
-  player.style.top=y+"px";
+// JOIN ROOM
+window.joinRoom = function(){
+  roomId = document.getElementById("room").value;
+  if(!roomId) return alert("Isi room!");
 
-  checkBox();
+  listenPlayers();
+}
+
+// GERAK
+document.addEventListener("keydown", async (e)=>{
+  if(!roomId) return;
+
+  if(e.key=="ArrowUp") y-=5;
+  if(e.key=="ArrowDown") y+=5;
+  if(e.key=="ArrowLeft") x-=5;
+  if(e.key=="ArrowRight") x+=5;
+
+  x=Math.max(0,Math.min(375,x));
+  y=Math.max(0,Math.min(375,y));
+
+  await setDoc(doc(db,"rooms",roomId,"players",playerId),{
+    x,y
+  });
 });
 
-// SPAWN BANYAK BOX
-let boxes=[];
-for(let i=0;i<5;i++){
-  let b=document.createElement("div");
-  b.className="box";
-  b.style.left=Math.random()*370+"px";
-  b.style.top=Math.random()*370+"px";
-  game.appendChild(b);
-  boxes.push(b);
-}
+// LISTEN REALTIME
+function listenPlayers(){
+  const playersRef = doc(db,"rooms",roomId);
 
-// SOAL
-function randomQ(){
-  const list=[
-    {q:"Hewan tanpa kaki?",a:"ular"},
-    {q:"2+3=?",a:"5"},
-    {q:"Lawan panas?",a:"dingin"},
-    {q:"Air jadi es jika?",a:"dingin"},
-    {q:"Ibukota Indonesia?",a:"jakarta"}
-  ];
-  return list[Math.floor(Math.random()*list.length)];
-}
-
-let currentQ;
-
-// CEK TABRAKAN
-function checkBox(){
-  boxes.forEach(b=>{
-    let bx=parseInt(b.style.left);
-    let by=parseInt(b.style.top);
-
-    if(Math.abs(x-bx)<30 && Math.abs(y-by)<30){
-      openQuiz();
-      b.remove();
-    }
+  onSnapshot(playersRef,()=>{
+    loadPlayers();
   });
+
+  loadPlayers();
 }
 
-// BUKA QUIZ
-function openQuiz(){
-  currentQ=randomQ();
-  document.getElementById("quizBox").style.display="block";
-  document.getElementById("question").innerText=currentQ.q;
-}
+// LOAD PLAYER
+import { getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// JAWAB
-function submitAnswer(){
-  let ans=document.getElementById("answer").value.toLowerCase();
+async function loadPlayers(){
+  const snap = await getDocs(collection(db,"rooms",roomId,"players"));
 
-  if(ans==currentQ.a){
-    alert("🔥 BENAR");
-  }else{
-    alert("❌ SALAH");
-  }
+  const game = document.getElementById("game");
+  game.innerHTML="";
 
-  document.getElementById("quizBox").style.display="none";
-  document.getElementById("answer").value="";
+  snap.forEach(p=>{
+    let d=p.data();
+
+    let div=document.createElement("div");
+    div.className="player";
+    div.style.left=d.x+"px";
+    div.style.top=d.y+"px";
+    div.style.background="#"+Math.floor(Math.random()*999999);
+
+    game.appendChild(div);
+  });
 }
 
 </script>
