@@ -2,169 +2,111 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ZEP FULL SYSTEM 😈</title>
+<title>GAME WORLD 😈</title>
 
 <style>
 body{
   background:#0f172a;
   color:white;
-  font-family:Arial;
   text-align:center;
+  font-family:Arial;
+}
+
+#game{
+  width:400px;
+  height:400px;
+  background:#1e293b;
+  margin:auto;
+  position:relative;
+  overflow:hidden;
+}
+
+#player{
+  width:20px;
+  height:20px;
+  background:lime;
+  position:absolute;
+  top:50px;
+  left:50px;
 }
 
 .box{
-  background:#1e293b;
-  padding:10px;
-  width:400px;
-  margin:auto;
+  width:20px;
+  height:20px;
+  background:red;
+  position:absolute;
+}
+
+#quiz{
   margin-top:10px;
-}
-
-#chat{
-  height:100px;
-  overflow:auto;
-  background:#020617;
-  padding:5px;
-  text-align:left;
-}
-
-input{
-  padding:8px;
-  margin:5px;
-}
-
-button{
-  padding:10px;
-  margin:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>💀 ZEP QUIZ FULL SYSTEM</h2>
+<h2>💀 GAME WORLD QUIZ</h2>
 
-<input id="name" placeholder="Nama"><br>
-<input id="room" placeholder="Room ID"><br>
-<button onclick="join()">JOIN</button>
-<button onclick="start()">START (HOST)</button>
-
-<div class="box" id="lobby">
-  <h3>👥 Lobby</h3>
-  <div id="players"></div>
-
-  <h3>💬 Chat</h3>
-  <div id="chat"></div>
-  <input id="msg" placeholder="Ketik pesan">
-  <button onclick="sendChat()">Kirim</button>
-
-  <h3 id="status">Menunggu...</h3>
+<div id="game">
+  <div id="player"></div>
 </div>
 
-<div class="box">
-  <h3 id="timer">⏱️</h3>
-  <h2 id="q"></h2>
+<div id="quiz">
+  <h3 id="q"></h3>
   <input id="a">
-  <br>
   <button onclick="answer()">Jawab</button>
-
-  <h3>🏆 Ranking</h3>
-  <div id="rank"></div>
+  <h3 id="score">Score: 0</h3>
 </div>
 
-<script type="module">
+<script>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+let player=document.getElementById("player");
+let x=50,y=50;
+let score=0;
+let correct="";
+let boxEl;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
-  authDomain: "ullahh-f696a.firebaseapp.com",
-  projectId: "ullahh-f696a"
-};
+// GERAK
+document.addEventListener("keydown",e=>{
+  if(e.key=="w") y-=10;
+  if(e.key=="s") y+=10;
+  if(e.key=="a") x-=10;
+  if(e.key=="d") x+=10;
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  player.style.top=y+"px";
+  player.style.left=x+"px";
 
-let room="", name="", score=0;
-let correct="", timer=0, interval;
+  checkHit();
+});
 
-// JOIN
-window.join = async function(){
-  room = document.getElementById("room").value;
-  name = document.getElementById("name").value;
+// SPAWN BOX
+function spawnBox(){
+  if(boxEl) boxEl.remove();
 
-  await setDoc(doc(db,"rooms",room,"players",name),{
-    score:0
-  });
+  boxEl=document.createElement("div");
+  boxEl.className="box";
 
-  listenRoom();
-  listenPlayers();
-  listenChat();
+  let bx=Math.random()*360;
+  let by=Math.random()*360;
+
+  boxEl.style.left=bx+"px";
+  boxEl.style.top=by+"px";
+
+  document.getElementById("game").appendChild(boxEl);
 }
 
-// LISTEN ROOM
-function listenRoom(){
-  onSnapshot(doc(db,"rooms",room),(snap)=>{
-    let d=snap.data();
-    if(!d) return;
+// DETEKSI SENTUH
+function checkHit(){
+  if(!boxEl) return;
 
-    document.getElementById("status").innerText = d.status || "Menunggu";
+  let px=x, py=y;
+  let bx=parseInt(boxEl.style.left);
+  let by=parseInt(boxEl.style.top);
 
-    if(d.status=="start"){
-      document.getElementById("lobby").style.display="none";
-    }
-
-    document.getElementById("q").innerText = d.q;
-    correct = d.a;
-    startTimer(d.time);
-  });
-}
-
-// TIMER
-function startTimer(t){
-  clearInterval(interval);
-  timer = t;
-
-  interval = setInterval(()=>{
-    timer--;
-    document.getElementById("timer").innerText="⏱️ "+timer;
-    if(timer<=0) clearInterval(interval);
-  },1000);
-}
-
-// PLAYER LIST
-function listenPlayers(){
-  onSnapshot(collection(db,"rooms",room,"players"),(snap)=>{
-    let html="";
-    snap.forEach(p=>{
-      html+=`<div>👤 ${p.id}</div>`;
-    });
-    document.getElementById("players").innerHTML=html;
-  });
-}
-
-// CHAT
-window.sendChat = async function(){
-  let msg=document.getElementById("msg").value;
-
-  await addDoc(collection(db,"rooms",room,"chat"),{
-    name:name,
-    text:msg
-  });
-
-  document.getElementById("msg").value="";
-}
-
-function listenChat(){
-  onSnapshot(collection(db,"rooms",room,"chat"),(snap)=>{
-    let html="";
-    snap.forEach(c=>{
-      let d=c.data();
-      html+=`<div><b>${d.name}:</b> ${d.text}</div>`;
-    });
-    document.getElementById("chat").innerHTML=html;
-  });
+  if(Math.abs(px-bx)<20 && Math.abs(py-by)<20){
+    spawnQuestion();
+    boxEl.remove();
+  }
 }
 
 // SOAL
@@ -172,59 +114,33 @@ function getQ(){
   let list=[
     {q:"2+2=?",a:"4"},
     {q:"Hewan tanpa kaki?",a:"ular"},
-    {q:"Lawan panas?",a:"dingin"},
-    {q:"Ibukota Indonesia?",a:"jakarta"}
+    {q:"Warna langit?",a:"biru"},
+    {q:"Lawan panas?",a:"dingin"}
   ];
   return list[Math.floor(Math.random()*list.length)];
 }
 
-// START
-window.start = async function(){
+function spawnQuestion(){
   let q=getQ();
-
-  await setDoc(doc(db,"rooms",room),{
-    q:q.q,
-    a:q.a,
-    time:10,
-    status:"start"
-  });
+  correct=q.a;
+  document.getElementById("q").innerText=q.q;
 }
 
 // JAWAB
-window.answer = async function(){
+function answer(){
   let user=document.getElementById("a").value.toLowerCase();
 
   if(user==correct){
     score+=10;
-
-    await updateDoc(doc(db,"rooms",room,"players",name),{
-      score:score
-    });
-
-    alert("🔥 BENAR");
+    document.getElementById("score").innerText="Score: "+score;
+    spawnBox();
   }else{
-    alert("❌ SALAH");
+    alert("❌ Salah");
   }
-
-  loadRank();
 }
 
-// RANKING
-async function loadRank(){
-  const snap = await getDocs(collection(db,"rooms",room,"players"));
-
-  let arr=[];
-  snap.forEach(d=>arr.push({name:d.id,...d.data()}));
-
-  arr.sort((a,b)=>b.score-a.score);
-
-  let html="";
-  arr.forEach(p=>{
-    html+=`<div>${p.name} : ${p.score}</div>`;
-  });
-
-  document.getElementById("rank").innerHTML=html;
-}
+// START
+spawnBox();
 
 </script>
 
