@@ -1,160 +1,86 @@
-// CANVAS SETUP
-const canvas = document.getElementById("game");
+<script>
+const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 
-// FULL SCREEN HP
-function resize(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener("resize", resize);
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-// PLAYER
+// ================= PLAYER =================
 let player = {
   x: 100,
   y: 100,
-  size: 20,
-  speed: 2
+  speed: 3,
+  moving: false
 };
 
-// CONTROL (keyboard)
+// ================= LOAD IMAGE =================
+const playerImg = new Image();
+playerImg.src = "vecteezy_cute-cat-football-player_49888125.png";
+
+// ================= CONTROL =================
 let keys = {};
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-// MAP
-const tileSize = 40;
-const map = [
-[1,1,1,1,1,1,1,1,1,1],
-[1,0,0,0,0,0,0,0,0,1],
-[1,0,1,1,0,0,1,0,0,1],
-[1,0,0,0,0,0,1,0,0,1],
-[1,0,0,1,1,0,0,0,0,1],
-[1,0,0,0,0,0,0,1,0,1],
-[1,0,1,0,0,0,0,0,0,1],
-[1,0,0,0,1,1,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,1],
-[1,1,1,1,1,1,1,1,1,1],
-];
+document.addEventListener("keydown", (e)=>{
+  keys[e.key] = true;
+});
 
-// BOX SOAL
-let box = {
-  x: 200,
-  y: 200,
-  size: 20
-};
+document.addEventListener("keyup", (e)=>{
+  keys[e.key] = false;
+});
 
-// QUIZ
-let correct = "";
-let score = 0;
-let quizOpen = false;
+// ================= ANIMASI =================
+let frame = 0;
+let frameSpeed = 0.2; // makin besar makin cepat
 
-// SOAL RANDOM
-function getQ(){
-  const list = [
-    {q:"2+2=?",a:"4"},
-    {q:"Ibukota Indonesia?",a:"jakarta"},
-    {q:"Hewan tanpa kaki?",a:"ular"},
-    {q:"Lawan panas?",a:"dingin"}
-  ];
-  return list[Math.floor(Math.random()*list.length)];
-}
-
-// CEK WALL
-function isWall(x,y){
-  let gx = Math.floor(x/tileSize);
-  let gy = Math.floor(y/tileSize);
-
-  if(!map[gy] || map[gy][gx] === undefined) return true;
-  return map[gy][gx] === 1;
-}
-
-// UPDATE
 function update(){
+  player.moving = false;
 
-  if(quizOpen) return; // STOP GERAK SAAT QUIZ
+  if(keys["ArrowUp"]){
+    player.y -= player.speed;
+    player.moving = true;
+  }
+  if(keys["ArrowDown"]){
+    player.y += player.speed;
+    player.moving = true;
+  }
+  if(keys["ArrowLeft"]){
+    player.x -= player.speed;
+    player.moving = true;
+  }
+  if(keys["ArrowRight"]){
+    player.x += player.speed;
+    player.moving = true;
+  }
 
-  let nx = player.x;
-  let ny = player.y;
-
-  if(keys["w"]) ny -= player.speed;
-  if(keys["s"]) ny += player.speed;
-  if(keys["a"]) nx -= player.speed;
-  if(keys["d"]) nx += player.speed;
-
-  if(!isWall(nx, player.y)) player.x = nx;
-  if(!isWall(player.x, ny)) player.y = ny;
-
-  // SENTUH BOX
-  if(Math.abs(player.x - box.x) < 20 && Math.abs(player.y - box.y) < 20){
-    openQuiz();
+  if(player.moving){
+    frame += frameSpeed;
+  } else {
+    frame = 0;
   }
 }
 
-// DRAW
+// ================= DRAW =================
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  let camX = player.x - canvas.width/2;
-  let camY = player.y - canvas.height/2;
+  // animasi goyang dikit (fake animation)
+  let bounce = Math.sin(frame) * 3;
 
-  // MAP
-  for(let y=0;y<map.length;y++){
-    for(let x=0;x<map[y].length;x++){
-      ctx.fillStyle = map[y][x]===1 ? "#374151" : "#1f2937";
-      ctx.fillRect(x*tileSize-camX, y*tileSize-camY, tileSize, tileSize);
-    }
-  }
-
-  // BOX
-  ctx.fillStyle = "red";
-  ctx.fillRect(box.x-camX, box.y-camY, box.size, box.size);
-
-  // PLAYER
-  ctx.fillStyle = "lime";
-  ctx.fillRect(player.x-camX, player.y-camY, player.size, player.size);
+  ctx.drawImage(
+    playerImg,
+    player.x,
+    player.y + bounce,
+    50,
+    50
+  );
 }
 
-// LOOP
-function loop(){
+// ================= LOOP =================
+function gameLoop(){
   update();
   draw();
-  requestAnimationFrame(loop);
-}
-loop();
-
-// QUIZ
-function openQuiz(){
-  if(quizOpen) return;
-
-  quizOpen = true;
-
-  let q = getQ();
-  correct = q.a;
-
-  document.getElementById("q").innerText = q.q;
-  document.getElementById("quizBox").style.display = "block";
+  requestAnimationFrame(gameLoop);
 }
 
-// JAWAB
-window.answer = function(){
-  let user = document.getElementById("a").value.toLowerCase();
-
-  if(user === correct){
-    score += 10;
-    alert("🔥 Benar! Score: " + score);
-
-    // PINDAH BOX
-    box.x = Math.random() * 300 + 50;
-    box.y = Math.random() * 300 + 50;
-
-  } else {
-    alert("❌ Salah");
-  }
-
-  document.getElementById("quizBox").style.display = "none";
-  document.getElementById("a").value = "";
-
-  quizOpen = false;
-};
+gameLoop();
+    </script>
