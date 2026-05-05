@@ -5,19 +5,15 @@
 <title>ZEP QUIZ ONLINE 😈</title>
 <style>
 body{margin:0;overflow:hidden;background:#0f172a;color:white;font-family:sans-serif}
-
 #menu{
 position:absolute;top:50%;left:50%;
 transform:translate(-50%,-50%);
 text-align:center;
 }
-
 button,input{
 padding:10px;margin:5px;border:none;border-radius:8px;
 }
-
 canvas{display:none;}
-
 #quizBox{
 position:absolute;
 top:50%;left:50%;
@@ -46,148 +42,159 @@ display:none;
 <button onclick="answer()">Jawab</button>
 </div>
 
+<!-- FIREBASE CDN -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-// FIREBASE
+// ================= FIREBASE =================
 const firebaseConfig = {
- apiKey:"AIzaSyCQ...",
- authDomain:"ullahh-f696a.firebaseapp.com",
- databaseURL:"https://ullahh-f696a-default-rtdb.firebaseio.com/",
- projectId:"ullahh-f696a"
+  apiKey: "AIzaSyCQqFX5Urj9Yhzj40cFS4EBQiDijjTRFo8",
+  authDomain: "ullahh-f696a.firebaseapp.com",
+  databaseURL: "https://ullahh-f696a-default-rtdb.firebaseio.com",
+  projectId: "ullahh-f696a",
+  storageBucket: "ullahh-f696a.firebasestorage.app",
+  messagingSenderId: "29708567375",
+  appId: "1:29708567375:web:304c8c43810ab406b07b3a"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// GAME
-const canvas=document.querySelector("canvas");
-const ctx=canvas.getContext("2d");
-canvas.width=innerWidth;
-canvas.height=innerHeight;
+// ================= GAME =================
+const canvas = document.querySelector("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
-let player={x:100,y:100};
-let players={};
-let roomId="";
-let id="p_"+Math.random();
+let player = {x:100,y:100};
+let players = {};
+let roomId = "";
+let playerId = "p_"+Math.random();
 
-// IMAGE
-const img=new Image();
-img.src="vecteezy_cute-cat-football-player_49888125.png";
+// ================= IMAGE =================
+const img = new Image();
+img.src = "vecteezy_cute-cat-football-player_49888125.png";
 
-// NAME
-let playerName="";
+// ================= NAME =================
+let playerName = "";
 
-// ROOM
+// ================= ROOM =================
 function createRoom(){
- roomId="room_"+Math.floor(Math.random()*9999);
- startGame();
+  roomId = "room_"+Math.floor(Math.random()*9999);
+  startGame();
 }
 
 function joinRoom(){
- roomId=document.getElementById("room").value;
- if(roomId==="") return alert("Isi kode!");
- startGame();
+  roomId = document.getElementById("room").value;
+  if(!roomId) return alert("Isi kode!");
+  startGame();
 }
 
 function startGame(){
- playerName=document.getElementById("name").value||"Player";
+  playerName = document.getElementById("name").value || "Player";
 
- document.getElementById("menu").style.display="none";
- canvas.style.display="block";
+  document.getElementById("menu").style.display="none";
+  canvas.style.display="block";
 
- db.ref(roomId+"/players").on("value",snap=>{
-   players=snap.val()||{};
- });
+  db.ref(roomId+"/players").on("value",snap=>{
+    players = snap.val() || {};
+  });
 
- setInterval(()=>{
-   db.ref(roomId+"/players/"+id).set({
-     x:player.x,
-     y:player.y,
-     name:playerName
-   });
- },100);
+  setInterval(()=>{
+    db.ref(roomId+"/players/"+playerId).set({
+      x:player.x,
+      y:player.y,
+      name:playerName
+    });
+  },100);
 
- loop();
+  loop();
 }
 
-// CONTROL
-let keys={};
+// ================= CONTROL =================
+let keys = {};
 addEventListener("keydown",e=>keys[e.key]=true);
 addEventListener("keyup",e=>keys[e.key]=false);
 
-// QUIZ
-let box={x:300,y:300};
-let correct="";
-let quizOpen=false;
+// ================= QUIZ =================
+let box = {x:300,y:300};
+let correct = "";
+let quizOpen = false;
 
 function getQ(){
- const q=[
-  {q:"2+2?",a:"4"},
-  {q:"Hewan tanpa kaki?",a:"ular"},
-  {q:"Ibukota?",a:"jakarta"}
- ];
- return q[Math.floor(Math.random()*q.length)];
+  const q = [
+    {q:"2+2?",a:"4"},
+    {q:"Hewan tanpa kaki?",a:"ular"},
+    {q:"Ibukota Indonesia?",a:"jakarta"},
+    {q:"5x5?",a:"25"}
+  ];
+  return q[Math.floor(Math.random()*q.length)];
 }
 
 function openQuiz(){
- if(quizOpen) return;
- quizOpen=true;
+  if(quizOpen) return;
+  quizOpen = true;
 
- let data=getQ();
- correct=data.a;
+  let data = getQ();
+  correct = data.a;
 
- document.getElementById("q").innerText=data.q;
- document.getElementById("quizBox").style.display="block";
+  document.getElementById("q").innerText = data.q;
+  document.getElementById("quizBox").style.display = "block";
 }
 
 function answer(){
- let a=document.getElementById("ans").value.toLowerCase();
+  let a = document.getElementById("ans").value.toLowerCase();
 
- if(a===correct){
-   alert("Benar 🔥");
-   box.x=Math.random()*500;
-   box.y=Math.random()*500;
- }else{
-   alert("Salah ❌");
- }
+  if(a === correct){
+    alert("Benar 🔥");
+    box.x = Math.random()*500;
+    box.y = Math.random()*500;
+  } else {
+    alert("Salah ❌");
+  }
 
- quizOpen=false;
- document.getElementById("quizBox").style.display="none";
+  quizOpen = false;
+  document.getElementById("quizBox").style.display = "none";
 }
 
-// LOOP
+// ================= LOOP =================
 function loop(){
 
- // gerak
- if(keys["ArrowUp"])player.y-=3;
- if(keys["ArrowDown"])player.y+=3;
- if(keys["ArrowLeft"])player.x-=3;
- if(keys["ArrowRight"])player.x+=3;
+  // gerak
+  if(keys["ArrowUp"]) player.y -= 3;
+  if(keys["ArrowDown"]) player.y += 3;
+  if(keys["ArrowLeft"]) player.x -= 3;
+  if(keys["ArrowRight"]) player.x += 3;
 
- // quiz trigger
- if(Math.abs(player.x-box.x)<20 && Math.abs(player.y-box.y)<20){
-   openQuiz();
- }
+  // trigger quiz
+  if(Math.abs(player.x-box.x)<30 && Math.abs(player.y-box.y)<30){
+    openQuiz();
+  }
 
- // draw
- ctx.clearRect(0,0,canvas.width,canvas.height);
+  // draw
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
- // box
- ctx.fillStyle="red";
- ctx.fillRect(box.x,box.y,20,20);
+  // box
+  ctx.fillStyle="red";
+  ctx.fillRect(box.x,box.y,20,20);
 
- // players
- for(let p in players){
-   let pl=players[p];
+  // players
+  for(let id in players){
+    let p = players[id];
 
-   ctx.drawImage(img,pl.x,pl.y,40,40);
+    ctx.drawImage(img, p.x, p.y, 40, 40);
 
-   ctx.fillStyle="white";
-   ctx.fillText(pl.name,pl.x+20,pl.y-5);
- }
+    ctx.fillStyle="white";
+    ctx.strokeStyle="black";
+    ctx.lineWidth=3;
+    ctx.textAlign="center";
 
- requestAnimationFrame(loop);
+    ctx.strokeText(p.name, p.x+20, p.y-5);
+    ctx.fillText(p.name, p.x+20, p.y-5);
+  }
+
+  requestAnimationFrame(loop);
 }
 </script>
 
