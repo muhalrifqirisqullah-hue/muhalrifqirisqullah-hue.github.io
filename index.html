@@ -1,73 +1,31 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>GAME WORLD QUIZ 😈</title>
-
-<style>
-body{
-  margin:0;
-  background:black;
-  overflow:hidden;
-  font-family:Arial;
-}
-
-/* CANVAS */
-canvas{
-  display:block;
-  margin:auto;
-  background:#020617;
-}
-
-/* POPUP QUIZ */
-#quizBox{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:#1e293b;
-  padding:20px;
-  border-radius:10px;
-  display:none;
-  text-align:center;
-}
-
-button{
-  padding:10px;
-  margin:5px;
-}
-
-</style>
-</head>
-
-<body>
-
-<canvas id="game"></canvas>
-
-<div id="quizBox">
-  <h3 id="q"></h3>
-  <input id="a"><br>
-  <button onclick="answer()">Jawab</button>
-</div>
-
-<script>
+// CANVAS SETUP
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 400;
-canvas.height = 400;
+// FULL SCREEN HP
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
 
 // PLAYER
-let player = {x:100,y:100,size:20,speed:2};
+let player = {
+  x: 100,
+  y: 100,
+  size: 20,
+  speed: 2
+};
 
-// CONTROL
+// CONTROL (keyboard)
 let keys = {};
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
 // MAP
-const tileSize=40;
-const map=[
+const tileSize = 40;
+const map = [
 [1,1,1,1,1,1,1,1,1,1],
 [1,0,0,0,0,0,0,0,0,1],
 [1,0,1,1,0,0,1,0,0,1],
@@ -81,15 +39,20 @@ const map=[
 ];
 
 // BOX SOAL
-let box = {x:200,y:200,size:20};
+let box = {
+  x: 200,
+  y: 200,
+  size: 20
+};
 
 // QUIZ
-let correct="";
-let score=0;
+let correct = "";
+let score = 0;
+let quizOpen = false;
 
 // SOAL RANDOM
 function getQ(){
-  let list=[
+  const list = [
     {q:"2+2=?",a:"4"},
     {q:"Ibukota Indonesia?",a:"jakarta"},
     {q:"Hewan tanpa kaki?",a:"ular"},
@@ -98,28 +61,33 @@ function getQ(){
   return list[Math.floor(Math.random()*list.length)];
 }
 
-// COLLISION
+// CEK WALL
 function isWall(x,y){
-  let gx=Math.floor(x/tileSize);
-  let gy=Math.floor(y/tileSize);
-  return map[gy][gx]===1;
+  let gx = Math.floor(x/tileSize);
+  let gy = Math.floor(y/tileSize);
+
+  if(!map[gy] || map[gy][gx] === undefined) return true;
+  return map[gy][gx] === 1;
 }
 
 // UPDATE
 function update(){
-  let nx=player.x;
-  let ny=player.y;
 
-  if(keys["w"]) ny-=player.speed;
-  if(keys["s"]) ny+=player.speed;
-  if(keys["a"]) nx-=player.speed;
-  if(keys["d"]) nx+=player.speed;
+  if(quizOpen) return; // STOP GERAK SAAT QUIZ
 
-  if(!isWall(nx,player.y)) player.x=nx;
-  if(!isWall(player.x,ny)) player.y=ny;
+  let nx = player.x;
+  let ny = player.y;
 
-  // CEK SENTUH BOX
-  if(Math.abs(player.x-box.x)<20 && Math.abs(player.y-box.y)<20){
+  if(keys["w"]) ny -= player.speed;
+  if(keys["s"]) ny += player.speed;
+  if(keys["a"]) nx -= player.speed;
+  if(keys["d"]) nx += player.speed;
+
+  if(!isWall(nx, player.y)) player.x = nx;
+  if(!isWall(player.x, ny)) player.y = ny;
+
+  // SENTUH BOX
+  if(Math.abs(player.x - box.x) < 20 && Math.abs(player.y - box.y) < 20){
     openQuiz();
   }
 }
@@ -128,24 +96,24 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  let camX=player.x-canvas.width/2;
-  let camY=player.y-canvas.height/2;
+  let camX = player.x - canvas.width/2;
+  let camY = player.y - canvas.height/2;
 
   // MAP
   for(let y=0;y<map.length;y++){
     for(let x=0;x<map[y].length;x++){
-      ctx.fillStyle=map[y][x]===1?"#374151":"#1f2937";
-      ctx.fillRect(x*tileSize-camX,y*tileSize-camY,tileSize,tileSize);
+      ctx.fillStyle = map[y][x]===1 ? "#374151" : "#1f2937";
+      ctx.fillRect(x*tileSize-camX, y*tileSize-camY, tileSize, tileSize);
     }
   }
 
   // BOX
-  ctx.fillStyle="red";
-  ctx.fillRect(box.x-camX,box.y-camY,box.size,box.size);
+  ctx.fillStyle = "red";
+  ctx.fillRect(box.x-camX, box.y-camY, box.size, box.size);
 
   // PLAYER
-  ctx.fillStyle="lime";
-  ctx.fillRect(player.x-camX,player.y-camY,player.size,player.size);
+  ctx.fillStyle = "lime";
+  ctx.fillRect(player.x-camX, player.y-camY, player.size, player.size);
 }
 
 // LOOP
@@ -156,33 +124,37 @@ function loop(){
 }
 loop();
 
-// QUIZ POPUP
+// QUIZ
 function openQuiz(){
-  let q=getQ();
-  correct=q.a;
-  document.getElementById("q").innerText=q.q;
-  document.getElementById("quizBox").style.display="block";
+  if(quizOpen) return;
+
+  quizOpen = true;
+
+  let q = getQ();
+  correct = q.a;
+
+  document.getElementById("q").innerText = q.q;
+  document.getElementById("quizBox").style.display = "block";
 }
 
 // JAWAB
-window.answer=function(){
-  let user=document.getElementById("a").value.toLowerCase();
+window.answer = function(){
+  let user = document.getElementById("a").value.toLowerCase();
 
-  if(user==correct){
-    score+=10;
-    alert("🔥 Benar! Score: "+score);
+  if(user === correct){
+    score += 10;
+    alert("🔥 Benar! Score: " + score);
 
-    // pindah box
-    box.x=Math.random()*300+50;
-    box.y=Math.random()*300+50;
-  }else{
+    // PINDAH BOX
+    box.x = Math.random() * 300 + 50;
+    box.y = Math.random() * 300 + 50;
+
+  } else {
     alert("❌ Salah");
   }
 
-  document.getElementById("quizBox").style.display="none";
-  document.getElementById("a").value="";
-}
-</script>
+  document.getElementById("quizBox").style.display = "none";
+  document.getElementById("a").value = "";
 
-</body>
-</html>
+  quizOpen = false;
+};
