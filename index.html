@@ -17,13 +17,11 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tes-iq-mu-elite';
 
-        // Membuat fungsi Firestore tersedia secara global untuk script biasa
         window.db = db;
         window.appId = appId;
         window.auth = auth;
         window.firestore = { doc, setDoc, collection, query, onSnapshot, serverTimestamp };
 
-        // Auth Logic - Mengikuti Rule 3
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -40,9 +38,7 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                console.log("Authenticated as:", user.uid);
                 window.currentUser = user;
-                // Memanggil loadLeaderboard setelah auth dipastikan siap
                 if (typeof loadLeaderboard === 'function') {
                     loadLeaderboard();
                 }
@@ -68,20 +64,33 @@
             width: 100%;
             max-width: 400px;
             aspect-ratio: 1 / 1;
-            border: 4px solid #1e293b;
+            border: 8px solid #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
         }
         .square {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.2rem;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .bg-light { background-color: #475569; }
-        .bg-dark { background-color: #1e293b; }
-        .selected { background-color: #3b82f6 !important; }
+        .bg-light { background-color: #cbd5e1; color: #1e293b; }
+        .bg-dark { background-color: #475569; color: #f8fafc; }
+        .selected { background-color: #3b82f6 !important; box-shadow: inset 0 0 15px rgba(0,0,0,0.3); }
         
+        /* Animasi feedback jawaban */
+        .correct-anim { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; transform: scale(1.02); }
+        .wrong-anim { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; transform: scale(0.98); }
+
         input::placeholder { color: rgba(255,255,255,0.2); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade { animation: fadeIn 0.4s ease forwards; }
     </style>
 </head>
 <body>
@@ -89,87 +98,114 @@
     <!-- Login Overlay -->
     <div id="login-overlay" class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-6">
         <div class="max-w-sm w-full text-center">
-            <h1 class="text-5xl font-black italic mb-2">SIAPA <span class="text-blue-600">KAMU?</span></h1>
+            <h1 class="text-5xl font-black italic mb-2 animate-fade">SIAPA <span class="text-blue-600">KAMU?</span></h1>
             <p class="text-slate-500 mb-8 text-sm uppercase tracking-widest">Masukkan namamu untuk masuk ke papan skor</p>
             <input type="text" id="player-name" placeholder="Nama Panggilan..." class="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-center text-xl font-bold mb-4 focus:outline-none focus:border-blue-500 transition-all">
-            <button onclick="handleLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-black italic text-xl hover:bg-blue-500 transition-all">MASUK GAME</button>
+            <button onclick="handleLogin()" class="w-full bg-blue-600 py-5 rounded-2xl font-black italic text-xl hover:bg-blue-500 transition-all active:scale-95 shadow-lg shadow-blue-600/20">MASUK GAME</button>
         </div>
     </div>
 
-    <div id="app" class="hidden min-h-screen flex flex-col p-6">
+    <div id="app" class="hidden min-h-screen flex flex-col p-6 animate-fade">
         <!-- Home Screen -->
         <div id="home-view" class="max-w-2xl mx-auto w-full py-12 text-center">
             <div class="mb-12">
                 <p id="welcome-text" class="text-blue-500 font-bold tracking-[0.3em] text-[10px] uppercase mb-4">HALO, PLAYER</p>
-                <h1 class="text-6xl font-black italic tracking-tighter mb-2">TES <span class="text-blue-600">IQ</span> MU</h1>
-                <p class="text-slate-500 text-sm">Platform Uji Kecerdasan & Strategi Terbaik</p>
+                <h1 class="text-7xl font-black italic tracking-tighter mb-2">TES <span class="text-blue-600">IQ</span> MU</h1>
+                <p class="text-slate-500 text-sm">Ukur Batas Kecerdasanmu & Tantang Dunia</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-                <button onclick="showIQSetup()" class="glass p-8 rounded-[40px] flex items-center justify-between hover:bg-blue-600 transition-all group">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                <button onclick="showIQSetup()" class="glass p-8 rounded-[40px] flex items-center justify-between hover:bg-blue-600/80 transition-all group border-b-4 border-blue-800">
                     <div class="text-left">
                         <h3 class="text-2xl font-black italic uppercase">Tes IQ</h3>
-                        <p class="text-slate-400 text-[10px] group-hover:text-blue-100">Ukur logika dan pola pikirmu</p>
+                        <p class="text-slate-400 text-[10px] group-hover:text-blue-100">Logika, Pola, & Kreativitas</p>
                     </div>
-                    <span class="text-4xl">🧠</span>
+                    <span class="text-5xl group-hover:scale-110 transition-transform">🧠</span>
                 </button>
 
-                <button onclick="startChess()" class="glass p-8 rounded-[40px] flex items-center justify-between hover:bg-indigo-600 transition-all group">
+                <button onclick="startChess()" class="glass p-8 rounded-[40px] flex items-center justify-between hover:bg-indigo-600/80 transition-all group border-b-4 border-indigo-800">
                     <div class="text-left">
-                        <h3 class="text-2xl font-black italic uppercase">Catur</h3>
-                        <p class="text-slate-400 text-[10px] group-hover:text-indigo-100">Latih strategi lawan komputer</p>
+                        <h3 class="text-2xl font-black italic uppercase">Catur AI</h3>
+                        <p class="text-slate-400 text-[10px] group-hover:text-indigo-100">Asah Strategi Melawan Bot</p>
                     </div>
-                    <span class="text-4xl">♟️</span>
+                    <span class="text-5xl group-hover:scale-110 transition-transform">♟️</span>
                 </button>
             </div>
 
-            <div class="glass p-8 rounded-[40px] text-left">
-                <h3 class="font-black italic mb-4 flex items-center gap-2">🏆 RANKING DUNIA (REAL-TIME)</h3>
-                <div id="leaderboard-list" class="space-y-3">
-                    <p class="text-slate-500 text-xs italic">Memuat data ranking...</p>
+            <div class="glass p-8 rounded-[40px] text-left border border-white/5 mb-12">
+                <h3 class="font-black italic mb-6 flex items-center gap-2">
+                    <span class="text-yellow-500">🏆</span> HALL OF FAME (REAL-TIME)
+                </h3>
+                <div id="leaderboard-list" class="space-y-4">
+                    <p class="text-slate-500 text-xs italic">Menghubungkan ke satelit data...</p>
+                </div>
+            </div>
+
+            <!-- Bagian Kredit -->
+            <div class="mt-8 pt-8 border-t border-white/5">
+                <button onclick="showCredits()" class="text-[10px] font-black tracking-[0.3em] text-slate-600 uppercase hover:text-blue-500 transition-colors">
+                    DIPERSEMBAHKAN OLEH
+                </button>
+                <div id="credit-info" class="hidden mt-4 animate-fade">
+                    <p class="text-lg font-black italic uppercase">Muh Alrifqi Risqullaah</p>
+                    <div class="flex justify-center gap-4 mt-2">
+                        <span class="text-[8px] bg-blue-600/20 text-blue-500 px-3 py-1 rounded-full font-bold uppercase">Perancang</span>
+                        <span class="text-[8px] bg-blue-600/20 text-blue-500 px-3 py-1 rounded-full font-bold uppercase">Pemrogram</span>
+                        <span class="text-[8px] bg-blue-600/20 text-blue-500 px-3 py-1 rounded-full font-bold uppercase">Artis</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- IQ Setup Modal -->
-        <div id="iq-setup" class="hidden fixed inset-0 glass z-50 flex items-center justify-center p-6 text-center">
-            <div class="bg-slate-900 p-10 rounded-[50px] border border-white/10 w-full max-w-sm">
+        <div id="iq-setup" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6 text-center">
+            <div class="bg-slate-900 p-10 rounded-[50px] border border-white/10 w-full max-sm shadow-2xl">
                 <h2 class="text-3xl font-black italic mb-2 uppercase">JUMLAH SOAL</h2>
-                <p class="text-slate-500 text-sm mb-8">Ketik berapa soal yang kamu inginkan</p>
+                <p class="text-slate-500 text-sm mb-8">Sesuaikan tantangan untuk otakmu</p>
                 
-                <input type="number" id="custom-q-count" value="5" min="1" max="50" class="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-center text-3xl font-black mb-8 focus:outline-none focus:border-blue-600">
+                <div class="flex items-center gap-4 mb-8">
+                    <button onclick="adjQ(-1)" class="w-12 h-12 rounded-full glass font-bold text-2xl">-</button>
+                    <input type="number" id="custom-q-count" value="5" min="1" max="50" class="flex-1 bg-white/5 border border-white/10 p-4 rounded-xl text-center text-4xl font-black focus:outline-none focus:border-blue-600">
+                    <button onclick="adjQ(1)" class="w-12 h-12 rounded-full glass font-bold text-2xl">+</button>
+                </div>
 
-                <button onclick="startIQ()" class="w-full bg-white text-black py-5 rounded-2xl font-black italic text-xl">MULAI TES</button>
-                <button onclick="hideIQSetup()" class="mt-6 text-slate-500 text-sm font-bold uppercase block w-full text-center">Batal</button>
+                <button onclick="startIQ()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black italic text-xl hover:bg-blue-500 shadow-lg shadow-blue-600/30">MULAI SEKARANG</button>
+                <button onclick="hideIQSetup()" class="mt-6 text-slate-500 text-sm font-bold uppercase block w-full text-center hover:text-white transition-colors">Batal</button>
             </div>
         </div>
 
         <!-- Game View -->
         <div id="game-view" class="hidden max-w-xl mx-auto w-full py-6 flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-8">
-                <h2 id="game-title" class="text-2xl font-black italic uppercase">GAME</h2>
-                <button onclick="exitGame()" class="bg-red-500/20 text-red-500 p-3 px-6 rounded-full font-bold text-xs">EXIT</button>
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+                    <h2 id="game-title" class="text-2xl font-black italic uppercase tracking-tighter text-white">GAME</h2>
+                </div>
+                <button onclick="exitGame()" class="bg-red-500/10 text-red-500 p-2 px-6 rounded-full font-bold text-[10px] hover:bg-red-500 hover:text-white transition-all">KELUAR</button>
             </div>
 
-            <div id="iq-content" class="w-full">
+            <div id="iq-content" class="w-full animate-fade">
                 <div class="mb-8">
-                    <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                    <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
                         <span id="iq-progress">Soal 1 / 5</span>
                         <span id="iq-score-display" class="text-blue-500">Skor: 0</span>
                     </div>
-                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
-                        <div id="iq-bar" class="h-full bg-blue-600 transition-all" style="width: 20%"></div>
+                    <div class="h-2 bg-slate-800/50 rounded-full overflow-hidden p-0.5">
+                        <div id="iq-bar" class="h-full bg-blue-600 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(37,99,235,0.5)]" style="width: 20%"></div>
                     </div>
                 </div>
-                <h3 id="iq-question" class="text-2xl font-bold mb-10 leading-tight">...</h3>
+                <div class="glass p-8 rounded-[40px] mb-8 border border-white/5">
+                    <h3 id="iq-question" class="text-2xl font-extrabold mb-0 leading-tight">...</h3>
+                </div>
                 <div id="iq-options" class="grid grid-cols-1 gap-4"></div>
             </div>
 
-            <div id="chess-content" class="hidden w-full flex flex-col items-center">
-                <div class="chess-board mb-8" id="board"></div>
-                <div class="flex gap-4">
-                    <div id="turn-white" class="px-6 py-2 rounded-full bg-white text-black font-black text-xs uppercase">Putih</div>
-                    <div id="turn-black" class="px-6 py-2 rounded-full bg-slate-800 text-slate-500 font-black text-xs uppercase">Hitam</div>
+            <div id="chess-content" class="hidden w-full flex flex-col items-center animate-fade">
+                <div class="chess-board mb-8 shadow-2xl shadow-blue-900/20" id="board"></div>
+                <div class="flex items-center gap-4 bg-white/5 p-2 rounded-full px-4 border border-white/10">
+                    <div id="turn-white" class="px-6 py-2 rounded-full bg-white text-black font-black text-xs uppercase shadow-lg">PLAYER</div>
+                    <span class="text-slate-600 font-bold">VS</span>
+                    <div id="turn-black" class="px-6 py-2 rounded-full bg-transparent text-slate-500 font-black text-xs uppercase">AI BOT</div>
                 </div>
             </div>
         </div>
@@ -182,6 +218,7 @@
         let activeQuestions = [];
         let isGameOver = false;
         let playerName = "";
+        let isProcessingAnswer = false;
 
         const questionBank = [
             { q: "Manakah yang lebih berat? 1kg Besi atau 1kg Kapas?", a: ["Besi", "Kapas", "Sama Berat"], c: 2 },
@@ -194,15 +231,22 @@
             { q: "Seorang petani punya 17 domba. Semua mati kecuali 9. Berapa sisanya?", a: ["8", "9", "17"], c: 1 },
             { q: "Jika ada 3 apel dan kamu mengambil 2, berapa apel yang kamu punya?", a: ["1", "2", "3"], c: 1 },
             { q: "Apa yang bisa kamu tangkap tapi tidak bisa kamu lempar?", a: ["Bola", "Flu", "Bayangan"], c: 1 },
-            { q: "Ayah Mary punya 5 anak: Nana, Nene, Nini, Nono. Siapa anak ke-5?", a: ["Nunu", "Mary", "Nany"], c: 1 }
+            { q: "Ayah Mary punya 5 anak: Nana, Nene, Nini, Nono. Siapa anak ke-5?", a: ["Nunu", "Mary", "Nany"], c: 1 },
+            { q: "Kata apa yang dieja salah di semua kamus?", a: ["Salah", "Salahkan", "Kesalahan"], c: 0 },
+            { q: "Apa yang memiliki satu mata tetapi tidak bisa melihat?", a: ["Badai", "Jarum", "Kentang"], c: 1 }
         ];
+
+        function adjQ(val) {
+            const input = document.getElementById('custom-q-count');
+            let n = parseInt(input.value) + val;
+            if (n < 1) n = 1;
+            if (n > 50) n = 50;
+            input.value = n;
+        }
 
         function handleLogin() {
             const input = document.getElementById('player-name').value.trim();
-            if (input.length < 2) {
-                alert("Nama terlalu pendek!");
-                return;
-            }
+            if (input.length < 2) return;
             playerName = input;
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
@@ -212,27 +256,20 @@
         async function saveScoreToCloud(score) {
             if (!window.currentUser || !window.firestore) return;
             const { doc, setDoc, serverTimestamp } = window.firestore;
-            
-            // Path yang benar sesuai RULE 1
             const userRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'scores', window.currentUser.uid);
-            
             try {
                 await setDoc(userRef, {
                     name: playerName,
                     score: score,
                     timestamp: serverTimestamp()
                 }, { merge: true });
-            } catch (e) { 
-                console.error("Score Save Error:", e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function loadLeaderboard() {
             if (!window.db || !window.firestore || !window.currentUser) return;
             const { collection, onSnapshot } = window.firestore;
             const list = document.getElementById('leaderboard-list');
-            
-            // Path yang benar sesuai RULE 1
             const colRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'scores');
             
             onSnapshot(colRef, (snapshot) => {
@@ -241,67 +278,71 @@
                     const data = doc.data();
                     if (data && data.name) scores.push(data);
                 });
-                
-                // Urutkan di memori sesuai RULE 2
                 scores.sort((a, b) => b.score - a.score);
-
                 list.innerHTML = '';
                 if (scores.length === 0) {
-                    list.innerHTML = '<p class="text-slate-500 text-xs italic">Belum ada ranking. Jadilah yang pertama!</p>';
+                    list.innerHTML = '<p class="text-slate-500 text-xs italic">Belum ada ranking tersedia.</p>';
                     return;
                 }
-
                 scores.slice(0, 10).forEach((entry, i) => {
                     const div = document.createElement('div');
-                    div.className = `flex items-center justify-between p-4 rounded-2xl ${i === 0 ? 'bg-blue-600/20 border border-blue-500/50' : 'bg-white/5 border border-white/5'}`;
+                    div.className = `flex items-center justify-between p-4 rounded-3xl animate-fade ${i === 0 ? 'bg-blue-600 text-white' : 'bg-white/5 border border-white/5'}`;
                     div.innerHTML = `
                         <div class="flex items-center gap-4">
-                            <span class="font-black italic text-slate-500">#${i + 1}</span>
-                            <span class="font-bold text-sm uppercase">${entry.name || 'Anonymous'}</span>
+                            <span class="font-black italic ${i === 0 ? 'text-blue-200' : 'text-slate-600'}">#${i + 1}</span>
+                            <span class="font-bold text-sm uppercase">${entry.name}</span>
                         </div>
-                        <span class="font-black italic text-blue-500">${entry.score || 0} IQ</span>
+                        <div class="text-right">
+                            <span class="font-black italic">${entry.score} IQ</span>
+                        </div>
                     `;
                     list.appendChild(div);
                 });
             }, (err) => {
-                console.error("Leaderboard Listen Error:", err);
-                list.innerHTML = '<p class="text-red-500 text-xs italic">Gagal memuat ranking. Coba lagi nanti.</p>';
+                list.innerHTML = '<p class="text-red-500 text-xs italic">Koneksi Papan Skor Terputus.</p>';
             });
+        }
+
+        function showCredits() {
+            const info = document.getElementById('credit-info');
+            info.classList.toggle('hidden');
         }
 
         function showIQSetup() { document.getElementById('iq-setup').classList.remove('hidden'); }
         function hideIQSetup() { document.getElementById('iq-setup').classList.add('hidden'); }
 
         function startIQ() {
-            const count = parseInt(document.getElementById('custom-q-count').value);
-            if (isNaN(count) || count < 1) {
-                alert("Masukkan jumlah soal yang valid!");
-                return;
-            }
-            iqTotal = count;
+            iqTotal = parseInt(document.getElementById('custom-q-count').value) || 5;
             hideIQSetup();
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('game-view').classList.remove('hidden');
             document.getElementById('iq-content').classList.remove('hidden');
             document.getElementById('chess-content').classList.add('hidden');
-            document.getElementById('game-title').innerText = "TES IQ";
-            
+            document.getElementById('game-title').innerText = "KATEGORI: TES IQ";
             isGameOver = false;
             iqIndex = 0;
             iqScore = 0;
-
             activeQuestions = [];
-            for(let i=0; i<iqTotal; i++) {
-                const rand = questionBank[Math.floor(Math.random() * questionBank.length)];
-                activeQuestions.push({...rand});
+            
+            // Pilih pertanyaan unik secara acak
+            let pool = [...questionBank];
+            for(let i=0; i < iqTotal; i++) {
+                if (pool.length === 0) pool = [...questionBank]; // Reset jika habis
+                const randIndex = Math.floor(Math.random() * pool.length);
+                activeQuestions.push(pool.splice(randIndex, 1)[0]);
             }
+            
             renderQuestion();
         }
 
         function renderQuestion() {
-            if (isGameOver || !activeQuestions[iqIndex]) return;
+            if (isGameOver) return;
+            
+            // Reset status proses saat soal baru muncul
+            isProcessingAnswer = false; 
+            
             const q = activeQuestions[iqIndex];
-            document.getElementById('iq-progress').innerText = `Soal ${iqIndex + 1} / ${iqTotal}`;
+            document.getElementById('iq-progress').innerText = `Progres: ${iqIndex + 1} / ${iqTotal}`;
             document.getElementById('iq-score-display').innerText = `Skor: ${iqScore}`;
             document.getElementById('iq-bar').style.width = ((iqIndex + 1) / iqTotal * 100) + '%';
             document.getElementById('iq-question').innerText = q.q;
@@ -310,41 +351,70 @@
             optionsDiv.innerHTML = '';
             q.a.forEach((opt, idx) => {
                 const btn = document.createElement('button');
-                btn.className = 'glass p-6 rounded-2xl text-left font-bold hover:bg-blue-600 transition-all';
+                btn.className = 'glass p-6 rounded-3xl text-left font-bold hover:bg-white/10 transition-all border border-white/5 active:scale-95 text-white';
                 btn.innerText = opt;
-                btn.onclick = () => handleAnswer(idx);
+                btn.onclick = (e) => handleAnswer(idx, btn);
                 optionsDiv.appendChild(btn);
             });
         }
 
-        function handleAnswer(idx) {
-            if (isGameOver || !activeQuestions[iqIndex]) return;
-            if (idx === activeQuestions[iqIndex].c) iqScore += 10;
+        function handleAnswer(idx, el) {
+            // Jika sedang memproses atau game sudah selesai, jangan lakukan apa-apa
+            if (isGameOver || isProcessingAnswer) return;
             
-            if (iqIndex < iqTotal - 1) {
-                iqIndex++;
-                renderQuestion();
+            isProcessingAnswer = true;
+            const correct = activeQuestions[iqIndex].c;
+            const buttons = document.getElementById('iq-options').children;
+            
+            // Cek Jawaban
+            if (idx === correct) {
+                iqScore += 10;
+                el.classList.add('correct-anim');
             } else {
-                isGameOver = true;
-                saveScoreToCloud(iqScore);
-                setTimeout(() => {
-                    alert(`Selesai! Skor Akhir ${playerName}: ${iqScore} IQ. Nama Anda sudah masuk ke Ranking!`);
-                    exitGame();
-                }, 100);
+                el.classList.add('wrong-anim');
+                // Tampilkan jawaban yang benar juga
+                if (buttons[correct]) {
+                    buttons[correct].classList.add('correct-anim');
+                }
             }
+
+            // Pindah soal otomatis setelah 1 detik
+            setTimeout(() => {
+                if (iqIndex < iqTotal - 1) {
+                    iqIndex++;
+                    renderQuestion();
+                } else {
+                    finishGame();
+                }
+            }, 1000);
         }
 
-        // Chess logic
+        function finishGame() {
+            isGameOver = true;
+            let rank = "Beginner";
+            if(iqScore >= iqTotal * 8) rank = "Genius";
+            else if(iqScore >= iqTotal * 5) rank = "Superior";
+            else if(iqScore >= iqTotal * 3) rank = "Average";
+
+            saveScoreToCloud(iqScore);
+            
+            const iqContent = document.getElementById('iq-content');
+            iqContent.innerHTML = `
+                <div class="text-center py-12 animate-fade">
+                    <h2 class="text-4xl font-black italic mb-2 text-white uppercase">HASIL AKHIR</h2>
+                    <div class="text-8xl font-black text-blue-600 mb-4">${iqScore}</div>
+                    <div class="text-xl font-bold uppercase tracking-[0.3em] text-slate-500 mb-8">${rank}</div>
+                    <button onclick="location.reload()" class="bg-white text-black p-6 px-12 rounded-3xl font-black italic text-xl hover:bg-slate-200 transition-all">MAIN LAGI</button>
+                </div>
+            `;
+        }
+
+        // --- Chess Logic ---
         const chessPieces = {
             'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
             'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
         };
-        let boardState = [
-            ['r','n','b','q','k','b','n','r'], ['p','p','p','p','p','p','p','p'],
-            [null,null,null,null,null,null,null,null], [null,null,null,null,null,null,null,null],
-            [null,null,null,null,null,null,null,null], [null,null,null,null,null,null,null,null],
-            ['P','P','P','P','P','P','P','P'], ['R','N','B','Q','K','B','N','R']
-        ];
+        let boardState = [];
         let isWhiteTurn = true;
         let selected = null;
 
@@ -353,8 +423,20 @@
             document.getElementById('game-view').classList.remove('hidden');
             document.getElementById('iq-content').classList.add('hidden');
             document.getElementById('chess-content').classList.remove('hidden');
-            document.getElementById('game-title').innerText = "CATUR vs AI";
+            document.getElementById('game-title').innerText = "MODE: STRATEGI";
+            resetChess();
             initChess();
+        }
+
+        function resetChess() {
+            boardState = [
+                ['r','n','b','q','k','b','n','r'], ['p','p','p','p','p','p','p','p'],
+                [null,null,null,null,null,null,null,null], [null,null,null,null,null,null,null,null],
+                [null,null,null,null,null,null,null,null], [null,null,null,null,null,null,null,null],
+                ['P','P','P','P','P','P','P','P'], ['R','N','B','Q','K','B','N','R']
+            ];
+            isWhiteTurn = true;
+            selected = null;
         }
 
         function initChess() {
@@ -376,12 +458,21 @@
             if (!isWhiteTurn) return;
             if (selected) {
                 const [sr, sc] = selected;
+                if (sr === r && sc === c) {
+                    selected = null;
+                    renderBoard();
+                    return;
+                }
                 boardState[r][c] = boardState[sr][sc];
                 boardState[sr][sc] = null;
                 selected = null;
                 isWhiteTurn = false;
+                
+                document.getElementById('turn-white').className = "px-6 py-2 rounded-full bg-transparent text-slate-500 font-black text-xs uppercase";
+                document.getElementById('turn-black').className = "px-6 py-2 rounded-full bg-white text-black font-black text-xs uppercase shadow-lg";
+                
                 renderBoard();
-                setTimeout(aiMove, 600);
+                setTimeout(aiMove, 800);
             } else {
                 if (boardState[r][c] && boardState[r][c] === boardState[r][c].toUpperCase()) {
                     selected = [r, c];
@@ -395,22 +486,31 @@
             let aiP = [];
             for(let r=0; r<8; r++) for(let c=0; c<8; c++) 
                 if(boardState[r][c] && boardState[r][c] === boardState[r][c].toLowerCase()) aiP.push([r,c]);
+            
             if(aiP.length > 0) {
                 const [sr,sc] = aiP[Math.floor(Math.random()*aiP.length)];
-                const nr = Math.min(sr+1, 7);
-                const nc = Math.max(0, Math.min(sc + (Math.random()>0.5?1:-1), 7));
+                let possibleMoves = [[sr+1, sc], [sr+1, sc+1], [sr+1, sc-1]];
+                let move = possibleMoves[Math.floor(Math.random()*possibleMoves.length)];
+                let nr = Math.max(0, Math.min(move[0], 7));
+                let nc = Math.max(0, Math.min(move[1], 7));
+
                 boardState[nr][nc] = boardState[sr][sc];
                 boardState[sr][sc] = null;
             }
+
             isWhiteTurn = true;
+            document.getElementById('turn-black').className = "px-6 py-2 rounded-full bg-transparent text-slate-500 font-black text-xs uppercase";
+            document.getElementById('turn-white').className = "px-6 py-2 rounded-full bg-white text-black font-black text-xs uppercase shadow-lg";
             renderBoard();
         }
 
         function renderBoard() {
             for(let r=0; r<8; r++) for(let c=0; c<8; c++) {
                 const sq = document.getElementById(`sq-${r}-${c}`);
-                sq.innerText = boardState[r][c] ? chessPieces[boardState[r][c]] : '';
-                sq.classList.remove('selected');
+                if (sq) {
+                    sq.innerText = boardState[r][c] ? chessPieces[boardState[r][c]] : '';
+                    sq.classList.remove('selected');
+                }
             }
         }
 
@@ -418,8 +518,6 @@
             document.getElementById('home-view').classList.remove('hidden');
             document.getElementById('game-view').classList.add('hidden');
             isGameOver = false;
-            selected = null;
-            isWhiteTurn = true;
         }
 
     </script>
